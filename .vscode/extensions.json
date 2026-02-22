@@ -1,0 +1,17 @@
+{
+    "recommendations": [
+        // Deno (obligatorio para Edge Functions sin errores de lint)
+        "denoland.vscode-deno",
+        // TypeScript / React
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        // Supabase (útil para ver migraciones con syntax highlight)
+        "ms-vscode.vscode-typescript-next",
+        // Tailwind (si lo usas en apps/web)
+        "bradlc.vscode-tailwindcss",
+        // Docker
+        "ms-azuretools.vscode-docker",
+        // .env highlight
+        "mikestead.dotenv"
+    ]
+}

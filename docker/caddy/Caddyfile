@@ -1,0 +1,35 @@
+# SmartInventory — Configuración de Caddy (Reverse Proxy + HTTPS)
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# USO LOCAL (sin dominio real):
+#   Cambia "tudominio.com" por "localhost" o "0.0.0.0"
+#   Caddy gestionará HTTPS automático con Let's Encrypt
+#   si usas un dominio real y los puertos 80/443 están accesibles.
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Frontend → Next.js
+tudominio.com {
+  reverse_proxy web:3000
+
+  # Compresión
+  encode gzip zstd
+
+  # Headers de seguridad
+  header {
+    X-Content-Type-Options nosniff
+    X-Frame-Options DENY
+    Referrer-Policy strict-origin-when-cross-origin
+    -Server
+  }
+}
+
+# API (Supabase Kong) — ruta /api/* → Kong:8000
+tudominio.com/api/* {
+  uri strip_prefix /api
+  reverse_proxy kong:8000
+}
+
+# Supabase Studio (solo en dev/intranet, NO exponer en producción pública)
+# studio.tudominio.com {
+#   reverse_proxy studio:3000
+# }

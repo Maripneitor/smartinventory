@@ -1,0 +1,32 @@
+{
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SmartInventory — VS Code workspace settings
+    //
+    // Las Edge Functions usan Deno (supabase/functions/).
+    // El resto del proyecto (apps/web) usa Node/TypeScript.
+    //
+    // Para que desaparezcan los errores de "Deno no encontrado":
+    //   1. Instala la extensión: denoland.vscode-deno
+    //   2. Reinicia VS Code
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Deno: desactivado a nivel global
+    "deno.enable": false,
+    // Deno: activado SOLO dentro de supabase/functions/
+    "deno.enablePaths": [
+        "supabase/functions"
+    ],
+    // Importmap para resolución de módulos Deno (jsr:, npm:, etc.)
+    "deno.importMap": "./supabase/functions/deno.json",
+    // Excluir de la búsqueda general (mejora rendimiento)
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/.next": true,
+        "**/.supabase": true,
+        "**/backups": true
+    },
+    // Excluir del explorador de archivos
+    "files.exclude": {
+        "**/.DS_Store": true,
+        "**/.supabase": false
+    }
+}

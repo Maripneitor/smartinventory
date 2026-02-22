@@ -1,0 +1,51 @@
+services:
+  # ---------------- Database (Postgres + pgvector) ----------------
+  db:
+    image: ankane/pgvector:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../supabase/migrations:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+  # ---------------- API (PostgREST) ----------------
+  api:
+    image: postgrest/postgrest:latest
+    ports:
+      - "8000:3000"
+    environment:
+      PGRST_DB_URI: postgres://postgres:password@db:5432/postgres
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: postgres
+      PGRST_JWT_SECRET: super-secret-jwt-key-for-local-development-only
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  # ---------------- Web (Next) ----------------
+  # Cambiado a puerto 3001 para no chocar con tu 'npm run dev' local
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:8000
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: local-development-anon-key
+      DATABASE_URL: postgresql://postgres:password@db:5432/postgres
+    ports:
+      - "3001:3000"
+    volumes:
+      - ../apps/web:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
