@@ -41,16 +41,22 @@ export const containersService = {
     }) {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
-        const userId = user?.id || '00000000-0000-0000-0000-000000000000';
+        let userId = user?.id;
+
+        if (!userId && process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true') {
+            userId = '4cef6da7-62a7-4855-80a6-27583e387a05'; // mariomoguel05@gmail.com
+        }
+
+        if (!userId) throw new Error('Not authenticated — redirecting to login');
 
         const { data, error } = await supabase
             .from("containers")
             .insert({
                 id: params.id,
-                user_id: userId,
                 label: params.label,
                 location_id: params.location_id,
                 qr_payload: params.qr_payload,
+                user_id: userId
             })
             .select("*")
             .single();

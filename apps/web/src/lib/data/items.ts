@@ -56,13 +56,18 @@ export const itemsService = {
     }) {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
-        const userId = user?.id || '00000000-0000-0000-0000-000000000000';
+        let userId = user?.id;
+
+        if (!userId && process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true') {
+            userId = '4cef6da7-62a7-4855-80a6-27583e387a05'; // mariomoguel05@gmail.com
+        }
+
+        if (!userId) throw new Error('Not authenticated — redirecting to login');
 
         const { data, error } = await supabase
             .from("items")
             .insert({
                 id: params.id,
-                user_id: userId,
                 container_id: params.container_id,
                 name: params.name,
                 category: params.category ?? null,
@@ -74,6 +79,7 @@ export const itemsService = {
                 belongs_to_item_id: params.belongs_to_item_id ?? null,
                 photo_path: params.photo_path ?? null,
                 photo_mime: params.photo_mime ?? null,
+                user_id: userId
             })
             .select("*")
             .single();

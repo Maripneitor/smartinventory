@@ -219,13 +219,22 @@ Deno.serve(async (req) => {
     });
 
     const { data: userRes, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userRes?.user) {
+    let user = userRes?.user;
+
+    // Bypass de desarrollo: Si no hay usuario pero el bypass está activo
+    if (!user && Deno.env.get("DEV_AUTH_BYPASS") === "true") {
+      user = {
+        id: "4cef6da7-62a7-4855-80a6-27583e387a05",
+        email: "mariomoguel05@gmail.com"
+      } as any;
+    }
+
+    if (!user) {
       return new Response(JSON.stringify({ error: "Invalid session" }), {
         status: 401,
         headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
-    const user = userRes.user;
 
     const { photo_path, mime_type } = await req.json().catch(() => ({}));
     if (!photo_path || typeof photo_path !== "string") {
@@ -262,37 +271,30 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < providers.length; i++) {
       const p = providers[i];
-
       try {
+        let json;
         if (p === "gemini") {
           if (!GEMINI_API_KEY) throw new Error("Gemini error 401: Missing GEMINI_API_KEY");
-          const json = await geminiVisionJson({
+          json = await geminiVisionJson({
             apiKey: GEMINI_API_KEY,
             model: GEMINI_MODEL,
             mimeType,
             base64Data,
           });
-          return new Response(JSON.stringify({ ...json, _provider: "gemini" }), {
-            status: 200,
-            headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-          });
-        }
-
-        if (p === "groq") {
+        } else if (p === "groq") {
           if (!GROQ_API_KEY) throw new Error("Groq error 401: Missing GROQ_API_KEY");
-          const json = await groqVisionJson({
+          json = await groqVisionJson({
             apiKey: GROQ_API_KEY,
             model: GROQ_VISION_MODEL,
             mimeType,
             base64Data,
           });
-          return new Response(JSON.stringify({ ...json, _provider: "groq" }), {
-            status: 200,
-            headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-          });
+        } else {
+          throw new Error(`Unknown AI provider: ${p}`);
         }
-
-        throw new Error(`Proveedor IA no soportado: ${p}`);
+        return new Response(JSON.stringify(json), {
+          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+        });
       } catch (e: any) {
         lastError = e;
         if (!shouldFallback(e)) break;

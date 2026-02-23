@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
 import { Package2, Mail, Loader2, ArrowRight, ShieldCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -13,11 +11,6 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
 
     const supabase = createClient();
-    const router = useRouter();
-
-    useEffect(() => {
-        router.push("/");
-    }, [router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,7 +21,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signInWithOtp({
             email,
             options: {
-                emailRedirectTo: `${window.location.origin}/callback`,
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL ?? window.location.origin}/callback`,
             },
         });
 

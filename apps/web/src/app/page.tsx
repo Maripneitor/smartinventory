@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/browser";
+import { createClient, getDevUser } from "@/lib/supabase/browser";
 import { Scan, Box, Package, History, TrendingUp, Loader2, LogOut } from "lucide-react";
 import Link from "next/link";
 import { containersService } from "@/lib/data/containers";
@@ -20,12 +20,8 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
     async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setUser({ email: 'mario@smartinventory.local', id: '00000000-0000-0000-0000-000000000000' });
-      } else {
-        setUser(user);
-      }
+      const user = await getDevUser();
+      setUser(user ?? null);
 
       try {
         const [containersData, itemsData] = await Promise.all([

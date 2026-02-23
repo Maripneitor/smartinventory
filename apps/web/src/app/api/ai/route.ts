@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
+    // Solo existe en modo mock — en prod/real la IA llama a Edge Functions directamente
+    if (process.env.AI_MODE !== 'mock') {
+        return NextResponse.json({ error: "AI mock no está activo. Usa AI_MODE=mock para habilitarlo." }, { status: 404 });
+    }
+
     try {
         const { searchParams } = new URL(req.url);
         const functionName = searchParams.get('function');

@@ -44,14 +44,14 @@ export async function updateSession(request: NextRequest) {
     const isStaticFile = request.nextUrl.pathname.includes('.') ||
         request.nextUrl.pathname.startsWith('/_next')
 
-    // BYPASS AUTH PARA PRUEBAS
-    /*
-    if (!user && !isAuthPage && !isStaticFile) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/login'
-        return NextResponse.redirect(url)
+    // Auth guard — bypass SOLO si NEXT_PUBLIC_DEV_AUTH_BYPASS=true está explícito en env
+    if (process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS !== 'true') {
+        if (!user && !isAuthPage && !isStaticFile) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/login'
+            return NextResponse.redirect(url)
+        }
     }
-    */
 
     return supabaseResponse
 }

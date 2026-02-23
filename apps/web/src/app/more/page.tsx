@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/browser";
+import { createClient, getDevUser } from "@/lib/supabase/browser";
 import { ChevronLeft, User, Bell, Shield, HelpCircle, LogOut, ChevronRight, Laptop, MapPin, Database } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -10,7 +10,7 @@ export default function MorePage() {
     const supabase = createClient();
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => setUser(data.user));
+        getDevUser().then(u => setUser(u));
     }, []);
 
     const handleSignOut = async () => {

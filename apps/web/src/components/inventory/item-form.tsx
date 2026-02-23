@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { uploadItemPhoto } from "@/lib/data/storage";
 import { itemsService, ItemType, ItemCondition } from "@/lib/data/items";
 import { analyzeItemWithAI, generateEmbeddings } from "@/lib/data/ai";
-import { createClient } from "@/lib/supabase/browser";
+import { createClient, getDevUser } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DevicePicker } from "./device-picker";
@@ -73,21 +73,21 @@ export function ItemForm() {
 
         try {
             const supabase = createClient();
-            const userRes = await supabase.auth.getUser();
-            const user = userRes.data.user || { id: '00000000-0000-0000-0000-000000000000' };
+            const user = await getDevUser();
+            if (!user) throw new Error('No autenticado');
 
-            // 1) Asegurar upload
+            // 1) Asegurar upload — usar fileToProcess (no el state 'file' obsoleto)
             let path = photoPath;
             if (!path) {
                 setAiStatus("Subiendo a la nube...");
-                const { photo_path } = await uploadItemPhoto({ file, userId: user.id, itemId });
+                const { photo_path } = await uploadItemPhoto({ file: fileToProcess, userId: user.id, itemId });
                 path = photo_path;
                 setPhotoPath(path);
             }
 
             // 2) Invocar IA
             setAiStatus("Analizando contenido con IA...");
-            const ai = await analyzeItemWithAI({ photo_path: path!, mime_type: file.type });
+            const ai = await analyzeItemWithAI({ photo_path: path!, mime_type: fileToProcess.type });
 
             // 3) Aplicar resultados
             setAiStatus("Finalizando...");
@@ -134,14 +134,13 @@ export function ItemForm() {
 
         setLoading(true);
         try {
-            const supabase = createClient();
-            const userRes = await supabase.auth.getUser();
-            const user = userRes.data.user || { id: '00000000-0000-0000-0000-000000000000' };
+            const user = await getDevUser();
+            if (!user) throw new Error('No autenticado');
 
             // 1) Upload foto si no se hizo en el paso de IA
             let path = photoPath;
             if (!path) {
-                const { photo_path } = await uploadItemPhoto({ file, userId: user.id, itemId });
+                const { photo_path } = await uploadItemPhoto({ file: file!, userId: user.id, itemId });
                 path = photo_path;
             }
 
@@ -288,7 +287,7 @@ export function ItemForm() {
                         </div>
                     </div>
                 )}
-            </div>
+            </section>
 
             {/* Formulario */}
             <section className="flex flex-col gap-6">
