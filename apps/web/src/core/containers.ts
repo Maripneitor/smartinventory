@@ -6,6 +6,7 @@ export interface Container {
     location_id: string;
     label: string;
     qr_payload: string;
+    max_items: number;
     created_at: string;
 }
 
@@ -38,6 +39,7 @@ export const containersService = {
         label: string;
         location_id: string;
         qr_payload: string;
+        max_items?: number;
     }) {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -56,6 +58,7 @@ export const containersService = {
                 label: params.label,
                 location_id: params.location_id,
                 qr_payload: params.qr_payload,
+                max_items: params.max_items ?? 50,
                 user_id: userId
             })
             .select("*")

@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ChevronLeft, Plus, Printer, MoreVertical, LayoutGrid, List as ListIcon, Info, Loader2, Box as BoxIcon, Package as PackageIcon, MapPin } from "lucide-react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { containersService } from "@/core/containers";
-import { itemsService, Item } from "@/core/items";
-import { createSignedPhotoUrl } from "@/core/storage";
-
-// Fixed Link import for Next.js
-import { ContainerLabelPrinter } from "@/components/inventory/container-label-printer";
+import { ChevronLeft, Plus, LayoutGrid, List as ListIcon, Info, Loader2, Box as BoxIcon, Package as PackageIcon, MapPin, AlertTriangle } from "lucide-react";
 import NextLink from "next/link";
 
 export default function ContainerDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -53,8 +45,9 @@ export default function ContainerDetail({ params }: { params: Promise<{ id: stri
     if (loading) return <div className="flex h-64 items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
     if (!container) return <div className="text-center py-20 text-zinc-500">Caja no encontrada.</div>;
 
-    const conditionColor = container.condition === "new" ? "text-emerald-500" :
-        container.condition === "defective" ? "text-red-500" : "text-blue-500";
+    const conditionColor = "text-blue-500"; // Containers don't have condition in schema, defaulting to blue
+    const isFull = items.length >= (container.max_items || 50);
+    const capacityPercent = Math.min(100, (items.length / (container.max_items || 50)) * 100);
 
     return (
         <div className="flex flex-col gap-6">
@@ -75,13 +68,35 @@ export default function ContainerDetail({ params }: { params: Promise<{ id: stri
 
                 <div className="flex items-center gap-2">
                     <ContainerLabelPrinter containerId={container.id} label={container.label} />
-                    <div className="h-10 px-3 flex items-center justify-center rounded-xl bg-zinc-900 border border-white/5">
-                        <span className={cn("text-[10px] font-bold uppercase tracking-tighter", conditionColor)}>
-                            {container.condition || 'bueno'}
-                        </span>
+                    <div className="h-10 px-3 flex flex-col justify-center rounded-xl bg-zinc-900 border border-white/5 min-w-[100px]">
+                        <div className="flex justify-between items-center gap-2 mb-1">
+                            <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500">Capacidad</span>
+                             <span className={cn("text-[8px] font-bold uppercase", isFull ? "text-red-400" : "text-zinc-400")}>
+                                {items.length}/{container.max_items || 50}
+                             </span>
+                        </div>
+                        <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+                            <div 
+                                className={cn("h-full transition-all duration-500", isFull ? "bg-red-500" : capacityPercent > 80 ? "bg-yellow-500" : "bg-blue-500")} 
+                                style={{ width: `${capacityPercent}%` }} 
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Alerta de Capacidad */}
+            {isFull && (
+                <div className="flex items-center gap-4 rounded-2xl bg-red-500/10 border border-red-500/20 p-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-red-500">
+                        <AlertTriangle className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="text-sm font-bold text-red-400 uppercase tracking-tight">¡Caja Llena!</h4>
+                        <p className="text-xs text-red-400/70">Has alcanzado el límite de {container.max_items} objetos. Considera usar otra caja o aumentar el límite de ésta.</p>
+                    </div>
+                </div>
+            )}
 
             {/* Header Caja */}
             <header className="flex flex-col gap-2">

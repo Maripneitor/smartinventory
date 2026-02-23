@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { containersService } from "@/core/containers";
-import { locationsService, type Location } from "@/core/locations";
 import { LocationPicker } from "@/components/inventory/location-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +14,7 @@ export function ContainerForm() {
     const [locationId, setLocationId] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [maxItems, setMaxItems] = useState<number>(50);
 
     const [containerId, setContainerId] = useState<string>("");
 
@@ -37,12 +37,14 @@ export function ContainerForm() {
                 label: label.trim(),
                 location_id: locationId,
                 qr_payload,
+                max_items: maxItems,
             });
 
             router.push(`/containers/${containerId}`);
             router.refresh();
-        } catch (err: any) {
-            setErrorMsg(err?.message ?? "Error creando la caja.");
+        } catch (err) {
+            const error = err as Error;
+            setErrorMsg(error.message ?? "Error creando la caja.");
         } finally {
             setLoading(false);
         }
@@ -64,6 +66,17 @@ export function ContainerForm() {
                 <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Ubicación Física</label>
                     <LocationPicker value={locationId} onChange={setLocationId} />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Capacidad Máxima (Items)</label>
+                    <Input
+                        type="number"
+                        value={maxItems}
+                        onChange={(e) => setMaxItems(parseInt(e.target.value) || 0)}
+                        placeholder="Ej: 50"
+                    />
+                    <p className="text-[10px] text-zinc-500 italic">Te avisaremos cuando la caja esté llegando a este límite.</p>
                 </div>
 
                 <div className="rounded-xl bg-zinc-950/50 p-4 border border-white/5">
