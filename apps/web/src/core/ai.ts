@@ -20,13 +20,25 @@ export async function analyzeItemWithAI(params: { photo_path: string; mime_type?
         }
     }
 
-    const supabase = createClient();
-    const { data, error } = await supabase.functions.invoke("analyze-item", {
-        body: params,
-    });
+    try {
+        const supabase = createClient();
+        const { data, error } = await supabase.functions.invoke("analyze-item", {
+            body: params,
+        });
 
-    if (error) throw error;
-    return data;
+        if (error) throw error;
+        return data;
+    } catch (e) {
+        console.error("AI Analysis primary service failed", e);
+        // Basic fallback: Return generic structured data so the UI doesn't crash
+        return {
+            nombre_corto: "Desconocido",
+            categoria: "Otros",
+            descripcion: "No se pudo analizar la imagen automáticamente.",
+            tags: ["manual"],
+            posible_dispositivo: null
+        };
+    }
 }
 
 export async function generateEmbeddings(params: { item_id: string; text: string }) {

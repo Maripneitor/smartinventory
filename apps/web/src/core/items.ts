@@ -15,6 +15,7 @@ export interface Item {
     item_type: ItemType;
     belongs_to_item_id?: string;
     tags: string[];
+    ai_metadata?: any;
 }
 
 export const itemsService = {
@@ -53,6 +54,7 @@ export const itemsService = {
         belongs_to_item_id?: string | null;
         photo_path?: string | null;
         photo_mime?: string | null;
+        ai_metadata?: any | null;
     }) {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -79,6 +81,7 @@ export const itemsService = {
                 belongs_to_item_id: params.belongs_to_item_id ?? null,
                 photo_path: params.photo_path ?? null,
                 photo_mime: params.photo_mime ?? null,
+                ai_metadata: params.ai_metadata ?? {},
                 user_id: userId
             })
             .select("*")

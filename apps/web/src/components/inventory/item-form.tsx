@@ -32,6 +32,7 @@ export function ItemForm() {
     // AI specific state
     const [aiHint, setAiHint] = useState<string | null>(null);
     const [aiLoading, setAiLoading] = useState(false);
+    const [aiResultCache, setAiResultCache] = useState<any>(null);
     const [photoPath, setPhotoPath] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<{ containerId: string, label: string } | null>(null);
     const [targetContainerId, setTargetContainerId] = useState(containerId);
@@ -96,6 +97,7 @@ export function ItemForm() {
             setDescription(ai.descripcion || "");
             setTags(Array.isArray(ai.tags) ? ai.tags : []);
             setAiHint(ai.posible_dispositivo);
+            setAiResultCache(ai);
 
             if (ai.categoria) {
                 const { data: existingItems } = await supabase
@@ -158,6 +160,7 @@ export function ItemForm() {
                 photo_path: path,
                 photo_mime: file.type,
                 tags,
+                ai_metadata: aiResultCache || {}
             });
 
             // 3) Generar Embeddings (en segundo plano o esperar)
