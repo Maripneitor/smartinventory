@@ -4,9 +4,9 @@ import React, { useEffect, useState } from "react";
 import { ChevronLeft, Plus, Printer, MoreVertical, LayoutGrid, List as ListIcon, Info, Loader2, Box as BoxIcon, Package as PackageIcon, MapPin } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { containersService } from "@/lib/data/containers";
-import { itemsService, Item } from "@/lib/data/items";
-import { createSignedPhotoUrl } from "@/lib/data/storage";
+import { containersService } from "@/core/containers";
+import { itemsService, Item } from "@/core/items";
+import { createSignedPhotoUrl } from "@/core/storage";
 
 // Fixed Link import for Next.js
 import { ContainerLabelPrinter } from "@/components/inventory/container-label-printer";

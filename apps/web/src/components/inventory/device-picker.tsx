@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { listDevices } from "@/lib/data/devices";
+import { listDevices } from "@/core/devices";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Laptop, ChevronDown, ChevronUp, Search } from "lucide-react";

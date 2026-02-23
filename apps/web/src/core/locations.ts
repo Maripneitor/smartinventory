@@ -9,6 +9,10 @@ export interface Location {
     created_at: string;
 }
 
+export interface LocationTreeNode extends Location {
+    children: LocationTreeNode[];
+}
+
 export const locationsService = {
     async getAll() {
         const supabase = createClient();
@@ -46,16 +50,16 @@ export const locationsService = {
     },
 
     // Helper para construir el árbol en el cliente
-    buildTree(locations: Location[]) {
-        const map = new Map();
+    buildTree(locations: Location[]): LocationTreeNode[] {
+        const map = new Map<string, LocationTreeNode>();
         locations.forEach(loc => map.set(loc.id, { ...loc, children: [] }));
 
-        const tree: any[] = [];
+        const tree: LocationTreeNode[] = [];
         locations.forEach(loc => {
             if (loc.parent_id && map.has(loc.parent_id)) {
-                map.get(loc.parent_id).children.push(map.get(loc.id));
+                map.get(loc.parent_id)!.children.push(map.get(loc.id)!);
             } else {
-                tree.push(map.get(loc.id));
+                tree.push(map.get(loc.id)!);
             }
         });
         return tree;

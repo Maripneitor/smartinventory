@@ -1,6 +1,7 @@
 import { ItemForm } from "@/components/inventory/item-form";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export default function NewItemPage() {
     return (
@@ -13,7 +14,9 @@ export default function NewItemPage() {
             </div>
 
             <div className="max-w-xl mx-auto w-full">
-                <ItemForm />
+                <Suspense fallback={<div className="flex h-64 items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>}>
+                    <ItemForm />
+                </Suspense>
             </div>
         </div>
     );

@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { containersService } from "@/lib/data/containers";
+import { containersService } from "@/core/containers";
+import { locationsService, type Location } from "@/core/locations";
 import { LocationPicker } from "@/components/inventory/location-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

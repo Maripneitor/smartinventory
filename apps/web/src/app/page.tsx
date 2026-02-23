@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { createClient, getDevUser } from "@/lib/supabase/browser";
 import { Scan, Box, Package, History, TrendingUp, Loader2, LogOut } from "lucide-react";
 import Link from "next/link";
-import { containersService } from "@/lib/data/containers";
-import { itemsService } from "@/lib/data/items";
+import { itemsService } from "@/core/items";
+import { containersService } from "@/core/containers";
+import { locationsService } from "@/core/locations";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);

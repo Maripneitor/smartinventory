@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { containersService } from "@/lib/data/containers";
+import { containersService } from "@/core/containers";
+import { locationsService } from "@/core/locations";
 import { ChevronLeft, Plus, Box, MapPin, Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-export default function ContainersPage() {
+function ContainersList() {
     const sp = useSearchParams();
     const locationFilter = sp.get("location");
     const [containers, setContainers] = useState<any[]>([]);
@@ -90,5 +91,13 @@ export default function ContainersPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ContainersPage() {
+    return (
+        <Suspense fallback={<div className="flex h-64 items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>}>
+            <ContainersList />
+        </Suspense>
     );
 }

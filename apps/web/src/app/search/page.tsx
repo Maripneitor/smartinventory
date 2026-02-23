@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import { Search as SearchIcon, ChevronLeft, Sparkles, Loader2, Package, MapPin, Zap } from "lucide-react";
 import Link from "next/link";
-import { hybridSearch, textSearch } from "@/lib/data/ai";
-import { createSignedPhotoUrl } from "@/lib/data/storage";
+import { hybridSearch, textSearch } from "@/core/ai";
+import { createSignedPhotoUrl } from "@/core/storage";
 import { cn } from "@/lib/utils";
 
 type SearchMode = "hybrid" | "text";

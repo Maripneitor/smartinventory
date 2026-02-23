@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/browser';
+import { createClient } from "@/lib/supabase/browser";
 
 export type ItemType = "device" | "accessory" | "other";
 export type ItemCondition = "new" | "used" | "defective";

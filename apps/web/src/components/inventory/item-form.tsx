@@ -2,9 +2,9 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { uploadItemPhoto } from "@/lib/data/storage";
-import { itemsService, ItemType, ItemCondition } from "@/lib/data/items";
-import { analyzeItemWithAI, generateEmbeddings } from "@/lib/data/ai";
+import { uploadItemPhoto } from "@/core/storage";
+import { itemsService, type Item, type ItemType, type ItemCondition } from "@/core/items";
+import { analyzeItemWithAI, generateEmbeddings } from "@/core/ai";
 import { createClient, getDevUser } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

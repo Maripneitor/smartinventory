@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { listLocations, Location } from "@/lib/data/locations";
+import { locationsService, listLocations, type Location } from "@/core/locations";
 import { Button } from "@/components/ui/button";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";

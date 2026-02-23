@@ -3,31 +3,31 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, ChevronRight, MapPin, Loader2, Home } from "lucide-react";
 import Link from "next/link";
-import { locationsService, Location } from "@/lib/data/locations";
+import { locationsService, type Location as InventoryLocation, type LocationTreeNode } from "@/core/locations";
 import { cn } from "@/lib/utils";
 
 export default function LocationsPage() {
-    const [locations, setLocations] = useState<Location[]>([]);
+    const [locations, setLocations] = useState<InventoryLocation[]>([]);
     const [loading, setLoading] = useState(true);
     const [newName, setNewName] = useState("");
     const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
 
-    const loadLocations = async () => {
+    async function loadLocations() {
         try {
             const data = await locationsService.getAll();
             setLocations(data);
-        } catch (e) {
-            console.error(e);
+        } catch (error) {
+            console.error("Error loading locations:", error);
         } finally {
             setLoading(false);
         }
-    };
+    }
 
     useEffect(() => {
         loadLocations();
     }, []);
 
-    const handleCreate = async (e: React.FormEvent) => {
+    async function handleCreate(e: React.FormEvent) {
         e.preventDefault();
         if (!newName.trim()) return;
 
@@ -46,7 +46,7 @@ export default function LocationsPage() {
 
     if (loading) return <div className="flex h-64 items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
-    const tree = locationsService.buildTree(locations);
+    const tree: LocationTreeNode[] = locationsService.buildTree(locations);
 
     return (
         <div className="flex flex-col gap-8 max-w-2xl mx-auto">
