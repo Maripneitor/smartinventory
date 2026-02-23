@@ -7,90 +7,75 @@ Bienvenido a **SmartInventory**, la aplicación definitiva para organizar tus pe
 ## ✨ Características Mágicas
 
 - **🧠 Análisis con IA (Gemini/Groq)**: Sube una foto de un objeto y la IA rellenará automáticamente el nombre, categoría, descripción y etiquetas.
-- **🛡️ Cerebro Híbrido**: Sistema de failover automático. Si Gemini falla, la app cambia a Groq (Llama 3.2 Vision) al instante.
-- **🔍 Búsqueda Semántica**: Busca "algo para conectar la tele" y encontrará "Cables HDMI" aunque no uses las palabras exactas.
-- **🖨️ Etiquetas QR Profesionales**: Genera y descarga etiquetas en PDF listas para imprimir y pegar en tus cajas.
-- **🔗 Ecosistema de Dispositivos**: Vincula accesorios a sus equipos principales (ej: vincula un cargador a una laptop específica).
+- **⚡ Caché de IA**: Los resultados del análisis se guardan localmente para ahorrar API calls y dinero.
+- **🖼️ Compresión Proactica**: Las fotos se comprimen en el cliente antes de subir, ahorrando datos y tiempo.
+- **🛡️ Cerebro Híbrido**: Sistema de failover automático entre Gemini y Groq.
+- **🔍 Búsqueda Semántica Optimizada**: Búsqueda vectorial ultra-rápida usando índices **HNSW** en Postgres.
+- **🖨️ Etiquetas Profesionales (Zebra & Avery)**: Genera etiquetas individuales o hojas completas para etiquetas Avery (5160, 5163).
+- **📱 PWA & Offline**: Instala la app y consulta tu inventario incluso sin conexión.
+- **🔗 Ecosistema de Dispositivos**: Vincula accesorios a sus equipos principales (ej: "Laptops", "Consolas").
 
 ---
 
 ## 🚀 Guía de Inicio Rápido
 
-Si acabas de descargar el proyecto, sigue estos pasos para ponerlo en marcha:
-
 ### 1. Requisitos
-- [Node.js](https://nodejs.org/) (versión 18 o superior)
+
+- [Node.js](https://nodejs.org/) (versión 18+)
 - [Supabase CLI](https://supabase.com/docs/guides/cli)
-- Una cuenta en [Supabase Cloud](https://supabase.com/) (Gratis)
+- Cuenta en [Supabase Cloud](https://supabase.com/)
 
-### 2. Configura tus Secretos (.env)
-Necesitas crear dos archivos clave para que la app conecte con tu cerebro y base de datos:
+### 2. Configuración (.env)
 
-**A. En la raíz de `/apps/web/` crea el archivo `.env.local`:**
+**Apps/Web/.env.local:**
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key-larga-que-empieza-con-ey...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
 ```
 
-**B. En la carpeta `/supabase/` crea el archivo `.env`:**
-*(Esto es para las funciones de IA)*
+**Supabase/.env:**
+
 ```env
-GEMINI_API_KEY=tu-api-key-de-google
-GROQ_API_KEY=tu-api-key-de-groq
-GEMINI_MODEL=gemini-2.0-flash
-GROQ_VISION_MODEL=llama-3.2-11b-vision-preview
+GEMINI_API_KEY=tu-api-key
+GROQ_API_KEY=tu-api-key
 ```
 
-### 3. Prepara la Base de Datos
-Ve al [SQL Editor de Supabase](https://supabase.com/dashboard/project/_/sql/new) y ejecuta en orden los archivos que están en la carpeta `/supabase/migrations/`:
-1. `0001_init.sql` (Tablas base)
-2. `0002_storage.sql` (Bucket para fotos)
-3. `0003_semantic_search.sql` (Funciones de búsqueda)
+### 3. Base de Datos
 
-### 4. Despliega la IA (Edge Functions)
-Desde tu terminal en la raíz del proyecto:
-```bash
-# Inicia sesión
-supabase login
+Ejecuta las migraciones en `/supabase/migrations/` en orden correlativo (0001 a 0009).
 
-# Vincula tu proyecto
-supabase link --project-ref tu-referencia-de-proyecto
+### 4. Salud del Sistema
 
-# Sube las funciones
-supabase functions deploy analyze-item
-supabase functions deploy embed-text
-supabase functions deploy generate-embedding
+Puedes verificar que todo esté bien configurado con:
 
-# Sube las API Keys a la nube
-supabase secrets set GEMINI_API_KEY=tu-key
-supabase secrets set GROQ_API_KEY=tu-key
-```
-
-### 5. ¡Lanza la Aplicación!
 ```bash
 cd apps/web
+node scripts/check-db.js
+```
+
+### 5. Lanzamiento
+
+```bash
 npm install
 npm run dev
 ```
-Abre **[http://localhost:3000](http://localhost:3000)** y ¡listo!
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 🛠️ Tecnologías
 
-- **Frontend**: Next.js 15+, Tailwind CSS v4, Framer Motion.
-- **Backend**: Supabase (Postgres, Auth, Storage, Edge Functions).
-- **IA**: Google Gemini (Visión & Embeddings) y Groq (Llama 3.2 Vision).
-- **Herramientas**: jsPDF (Generación de etiquetas), Lucide (Iconos).
-
----
-
-## 📦 Estructura del Proyecto
-- `apps/web`: Aplicación principal de Next.js.
-- `supabase/functions`: Las funciones de IA que corren en la nube.
-- `supabase/migrations`: Los planos de tu base de datos.
-- `docker`: Configuración para correr todo localmente sin internet.
+- **Frontend**: Next.js 15+, Tailwind CSS, Zustand, html5-qrcode.
+- **Backend**: Supabase (Postgres + pgvector, Auth, Storage, Edge Functions).
+- **IA**: Google Gemini 2.0 & Llama 3.2 via Groq.
+- **PDF**: jsPDF para generación de etiquetas.
 
 ---
+
+## 📦 Estructura
+
+- `@/core`: Lógica de negocio consumible por toda la app.
+- `supabase/functions`: Cerebros de IA en la nube.
+- `supabase/migrations`: Planos de la base de datos.
 
 Desarrollado con ❤️ para organizar el caos. ¡Disfruta tu inventario inteligente!
