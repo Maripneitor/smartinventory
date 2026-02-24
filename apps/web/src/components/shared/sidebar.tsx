@@ -17,12 +17,12 @@ export function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="fixed left-0 top-0 z-[100] hidden h-screen w-72 flex-col border-r border-white/10 bg-zinc-950 px-6 py-8 lg:flex">
+        <aside className="fixed left-0 top-0 z-100 hidden h-screen w-72 flex-col border-r border-white/10 bg-zinc-950 px-6 py-8 lg:flex">
             <div className="mb-10 flex items-center gap-3 px-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600">
                     <Package2 className="h-6 w-6 text-white" />
                 </div>
-                <h1 className="font-display text-xl font-bold tracking-tight">SmartInventory</h1>
+                <span className="font-display text-xl font-bold tracking-tight">SmartInventory</span>
             </div>
 
             <nav className="flex flex-1 flex-col gap-2">

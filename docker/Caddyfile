@@ -1,0 +1,37 @@
+{
+    email {$EMAIL:info@example.com}
+}
+
+{$SITE_ADDRESS:localhost} {
+    # Reverse proxy para Next.js
+    reverse_proxy web:3000
+
+    # Reverse proxy para Supabase (Kong)
+    handle /auth/v1/* {
+        reverse_proxy kong:8000
+    }
+    handle /rest/v1/* {
+        reverse_proxy kong:8000
+    }
+    handle /storage/v1/* {
+        reverse_proxy kong:8000
+    }
+    handle /realtime/v1/* {
+        reverse_proxy kong:8000
+    }
+
+    # Habilitar compresión
+    encode zstd gzip
+
+    # Cabeceras de seguridad
+    header {
+        # HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # XSS Protection
+        X-XSS-Protection "1; mode=block"
+        # Clickjacking
+        X-Frame-Options "SAMEORIGIN"
+        # MIME type sniffing
+        X-Content-Type-Options "nosniff"
+    }
+}

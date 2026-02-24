@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { uploadItemPhoto } from "@/core/storage";
-import { itemsService, type Item, type ItemType, type ItemCondition } from "@/core/items";
+import { itemsService, type ItemType, type ItemCondition } from "@/core/items";
 import { analyzeItemWithAI, generateEmbeddings } from "@/core/ai";
 import { createClient, getDevUser } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export function ItemForm() {
     const [name, setName] = useState("");
     const [category, setCategory] = useState("");
     const [description, setDescription] = useState("");
-    const [quantity, setQuantity] = useState(1);
+    const [quantity] = useState(1);
     const [condition, setCondition] = useState<ItemCondition>("used");
     const [itemType, setItemType] = useState<ItemType>("accessory");
     const [belongsTo, setBelongsTo] = useState<string>("");
@@ -32,7 +32,7 @@ export function ItemForm() {
     // AI specific state
     const [aiHint, setAiHint] = useState<string | null>(null);
     const [aiLoading, setAiLoading] = useState(false);
-    const [aiResultCache, setAiResultCache] = useState<any>(null);
+    const [aiResultCache, setAiResultCache] = useState<Record<string, any> | null>(null);
     const [photoPath, setPhotoPath] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<{ containerId: string, label: string } | null>(null);
     const [targetContainerId, setTargetContainerId] = useState(containerId);
@@ -109,16 +109,17 @@ export function ItemForm() {
                 if (existingItems?.[0]) {
                     setSuggestion({
                         containerId: existingItems[0].container_id,
-                        label: (existingItems[0].containers as any)?.label || 'Caja existente'
+                        label: (existingItems[0].containers as unknown as { label: string })?.label || 'Caja existente'
                     });
                 }
             }
 
             setSuccessMsg("¡IA completó los datos!");
             setTimeout(() => setSuccessMsg(null), 3000);
-        } catch (e: any) {
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : "Falló el análisis de IA. Intenta de nuevo.";
             console.error(e);
-            setErrorMsg(e?.message ?? "Falló el análisis de IA. Intenta de nuevo.");
+            setErrorMsg(message);
         } finally {
             setAiLoading(false);
             setAiStatus("");
@@ -147,7 +148,7 @@ export function ItemForm() {
             }
 
             // 2) Insert item
-            const newItem = await itemsService.create({
+            await itemsService.create({
                 id: itemId, // usar el mismo UUID generado
                 container_id: targetContainerId,
                 name: name.trim(),
@@ -173,8 +174,9 @@ export function ItemForm() {
 
             router.push(`/containers/${targetContainerId}`);
             router.refresh();
-        } catch (err: any) {
-            setErrorMsg(err?.message ?? "Error guardando item.");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Error guardando item.";
+            setErrorMsg(message);
         } finally {
             setLoading(false);
         }
@@ -222,7 +224,7 @@ export function ItemForm() {
                                 </button>
                             </div>
                             {aiLoading && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/20 backdrop-blur-sm">
+                                <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300 flex items-center justify-center p-4">
                                     <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
                                     <p className="text-sm font-bold text-white animate-pulse uppercase tracking-widest">{aiStatus}</p>
                                 </div>
@@ -258,7 +260,7 @@ export function ItemForm() {
                             type="button"
                             disabled={aiLoading}
                             onClick={() => onAISuggest()}
-                            className="h-16 w-full gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-lg font-bold shadow-xl shadow-blue-500/20"
+                            className="h-16 w-full gap-3 rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 text-lg font-bold shadow-xl shadow-blue-500/20"
                         >
                             {aiLoading ? <Loader2 className="animate-spin" /> : <Sparkles className="h-6 w-6 fill-white" />}
                             {aiLoading ? "Procesando..." : "Autocompletar con IA"}
@@ -374,7 +376,7 @@ export function ItemForm() {
             </section>
 
             {/* Footer Fijo */}
-            <footer className="fixed bottom-0 left-0 right-0 z-[60] border-t border-white/10 bg-black/90 p-4 backdrop-blur-xl lg:static lg:bg-transparent lg:p-0">
+            <footer className="fixed bottom-0 left-0 right-0 z-60 border-t border-white/10 bg-black/90 p-4 backdrop-blur-xl lg:static lg:bg-transparent lg:p-0">
                 <div className="max-w-xl mx-auto flex gap-4">
                     <Button
                         type="button"
@@ -384,7 +386,7 @@ export function ItemForm() {
                     >
                         Descartar
                     </Button>
-                    <Button type="submit" disabled={loading} className="flex-[2] py-4 text-lg">
+                    <Button type="submit" disabled={loading} className="flex-2 py-4 text-lg">
                         {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                             <>
                                 <Save className="h-5 w-5 mr-2" />

@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Printer, Loader2, ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { generateAverySheet, AVERY_5160, AVERY_5163 } from "@/core/labels";
+import { generateAverySheet, AVERY_5160, AVERY_5163, type AveryTemplate } from "@/core/labels";
 import { cn } from "@/lib/utils";
 
 interface ContainerLabelProps {
@@ -49,7 +49,7 @@ export function ContainerLabelPrinter({ containerId, label }: ContainerLabelProp
         }
     }
 
-    async function printAvery(template: any) {
+    async function printAvery(template: AveryTemplate) {
         setGenerating(true);
         setOpen(false);
         try {
@@ -77,8 +77,8 @@ export function ContainerLabelPrinter({ containerId, label }: ContainerLabelProp
 
             {open && (
                 <>
-                    <div className="fixed inset-0 z-[70]" onClick={() => setOpen(false)} />
-                    <div className="glass-card absolute right-0 top-12 z-[80] w-64 overflow-hidden rounded-2xl p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                    <div className="fixed inset-0 z-70" onClick={() => setOpen(false)} />
+                    <div className="glass-card absolute right-0 top-12 z-80 w-64 overflow-hidden rounded-2xl p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
                         <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Formatos de Etiqueta</p>
                         <div className="mt-1 space-y-1">
                             <button

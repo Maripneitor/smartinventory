@@ -20,6 +20,11 @@
   --color-muted-foreground: #9ca3af;
 
   --color-border: rgba(255, 255, 255, 0.1);
+
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
 }
 
 @layer base {
@@ -31,7 +36,9 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 }
 
