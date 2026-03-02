@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/browser';
+import { createClient, getDevUser } from '@/lib/supabase/browser';
+import { db } from './db';
 
 export interface Location {
     id: string;
@@ -16,25 +17,33 @@ export interface LocationTreeNode extends Location {
 export const locationsService = {
     async getAll() {
         const supabase = createClient();
-        const { data, error } = await supabase
-            .from('locations')
-            .select('*')
-            .order('name');
+        try {
+            const { data, error } = await supabase
+                .from('locations')
+                .select('*')
+                .order('name');
 
-        if (error) throw error;
-        return data as Location[];
+            if (error) throw error;
+            if (data) {
+                await db.locations.bulkPut(data);
+            }
+            return data as Location[];
+        } catch (e) {
+            console.warn("Offline: returning locations from local DB", e);
+            return await db.locations.toArray() as Location[];
+        }
     },
 
     async create(payload: Partial<Location>) {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await getDevUser();
         let userId = user?.id;
 
-        if (!userId && process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true') {
-            userId = '4cef6da7-62a7-4855-80a6-27583e387a05'; // mariomoguel05@gmail.com
+        if (!userId && (process as any).env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true') {
+            userId = '4cef6da7-62a7-4855-80a6-27583e387a05';
         }
 
-        if (!userId) throw new Error('Not authenticated — redirecting to login');
+        if (!userId) throw new Error('Not authenticated');
 
         const { data, error } = await supabase
             .from('locations')
@@ -46,6 +55,7 @@ export const locationsService = {
             .single();
 
         if (error) throw error;
+        if (data) await db.locations.put(data);
         return data as Location;
     },
 
@@ -68,3 +78,4 @@ export const locationsService = {
 
 // Alias para mantener compatibilidad con el código sugerido
 export const listLocations = locationsService.getAll;
+

@@ -34,6 +34,9 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+import { ToastProvider } from "@/providers/toast-provider";
+import { OfflineHandler } from "@/components/shared/offline-handler";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,14 +52,19 @@ export default function RootLayout({
           outfit.variable
         )}
       >
-        <Sidebar />
-        <main className="relative flex min-h-screen flex-col lg:pl-72 pb-24 lg:pb-0">
-          <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
-            {children}
-          </div>
-        </main>
-        <BottomNav />
-        
+        <ToastProvider>
+          <OfflineHandler />
+          <Sidebar />
+          <main className="relative flex min-h-screen flex-col lg:pl-72 pb-24 lg:pb-0">
+            <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+              {children}
+            </div>
+          </main>
+          <BottomNav />
+        </ToastProvider>
+
+
+
         {/* SW Registration */}
         <script
           dangerouslySetInnerHTML={{

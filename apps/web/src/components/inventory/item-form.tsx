@@ -11,9 +11,13 @@ import { Input } from "@/components/ui/input";
 import { DevicePicker } from "./device-picker";
 import { Camera, Save, Loader2, Sparkles, X, Info, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/providers/toast-provider";
 
 export function ItemForm() {
+    const { toast, dismiss } = useToast();
     const router = useRouter();
+
+
     const sp = useSearchParams();
     const containerId = sp.get("container") || "";
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,29 +73,24 @@ export function ItemForm() {
         if (!fileToProcess) return setErrorMsg("Sube una foto primero para que la IA pueda verla.");
 
         setAiLoading(true);
-        setErrorMsg(null);
-        setAiStatus("Preparando imagen...");
+        const toastId = toast("Analizando fotografía...", "loading");
 
         try {
-            const supabase = createClient();
             const user = await getDevUser();
             if (!user) throw new Error('No autenticado');
 
-            // 1) Asegurar upload — usar fileToProcess (no el state 'file' obsoleto)
+            // 1) Asegurar upload
             let path = photoPath;
             if (!path) {
-                setAiStatus("Subiendo a la nube...");
                 const { photo_path } = await uploadItemPhoto({ file: fileToProcess, userId: user.id, itemId });
                 path = photo_path;
                 setPhotoPath(path);
             }
 
             // 2) Invocar IA
-            setAiStatus("Analizando contenido con IA...");
             const ai = await analyzeItemWithAI({ photo_path: path!, mime_type: fileToProcess.type });
 
             // 3) Aplicar resultados
-            setAiStatus("Finalizando...");
             setName(ai.nombre_corto || "");
             setCategory(ai.categoria || "");
             setDescription(ai.descripcion || "");
@@ -100,31 +99,26 @@ export function ItemForm() {
             setAiResultCache(ai);
 
             if (ai.categoria) {
-                const { data: existingItems } = await supabase
-                    .from('items')
-                    .select('container_id, containers(label)')
-                    .eq('category', ai.categoria)
-                    .limit(1);
-
-                if (existingItems?.[0]) {
+                const sugg = await itemsService.getSuggestionByCategory(ai.categoria);
+                if (sugg) {
                     setSuggestion({
-                        containerId: existingItems[0].container_id,
-                        label: (existingItems[0].containers as unknown as { label: string })?.label || 'Caja existente'
+                        containerId: sugg.container_id,
+                        label: sugg.containers?.label || 'Caja existente'
                     });
                 }
             }
 
-            setSuccessMsg("¡IA completó los datos!");
-            setTimeout(() => setSuccessMsg(null), 3000);
+            toast("¡Identificación completada!", "success");
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : "Falló el análisis de IA. Intenta de nuevo.";
+            const message = e instanceof Error ? e.message : "Falló el análisis de IA.";
             console.error(e);
-            setErrorMsg(message);
+            toast(message, "error");
         } finally {
+            dismiss(toastId);
             setAiLoading(false);
-            setAiStatus("");
         }
     }
+
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -136,6 +130,7 @@ export function ItemForm() {
         // Removida validación obligatoria de belongsTo para accesorios
 
         setLoading(true);
+        const toastId = toast("Guardando objeto...", "loading");
         try {
             const user = await getDevUser();
             if (!user) throw new Error('No autenticado');
@@ -149,7 +144,7 @@ export function ItemForm() {
 
             // 2) Insert item
             await itemsService.create({
-                id: itemId, // usar el mismo UUID generado
+                id: itemId,
                 container_id: targetContainerId,
                 name: name.trim(),
                 category: category.trim() || null,
@@ -159,28 +154,31 @@ export function ItemForm() {
                 item_type: itemType,
                 belongs_to_item_id: itemType === "accessory" ? belongsTo : null,
                 photo_path: path,
-                photo_mime: file.type,
+                photo_mime: file?.type,
                 tags,
-                ai_metadata: aiResultCache || {}
+                ai_metadata: aiResultCache || {},
+                file: file || undefined // for offline caching
             });
 
-            // 3) Generar Embeddings (en segundo plano o esperar)
+
+            // 3) Generar Embeddings
             try {
                 const textToEmbed = `${name} ${category} ${description} ${tags.join(' ')}`;
                 await generateEmbeddings({ item_id: itemId, text: textToEmbed });
-            } catch (e) {
-                console.error("Error generating embeddings, but item was saved", e);
-            }
+            } catch (e) { }
 
+            toast("Objeto guardado con éxito", "success");
             router.push(`/containers/${targetContainerId}`);
             router.refresh();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Error guardando item.";
-            setErrorMsg(message);
+            toast(message, "error");
         } finally {
+            dismiss(toastId);
             setLoading(false);
         }
     }
+
 
     return (
         <form onSubmit={onSubmit} className="flex flex-col gap-8 pb-32">

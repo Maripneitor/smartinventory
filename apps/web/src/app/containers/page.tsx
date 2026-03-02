@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { type Container } from "@/entities/container/schema";
 import { containersService } from "@/core/containers";
 import { locationsService } from "@/core/locations";
 import { ChevronLeft, Plus, Box, MapPin, Search, Loader2 } from "lucide-react";
@@ -10,7 +11,8 @@ import Link from "next/link";
 function ContainersList() {
     const sp = useSearchParams();
     const locationFilter = sp.get("location");
-    const [containers, setContainers] = useState<any[]>([]);
+    const [containers, setContainers] = useState<Container[]>([]);
+
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
 

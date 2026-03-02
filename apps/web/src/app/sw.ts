@@ -22,3 +22,13 @@ self.addEventListener('fetch', (event: any) => {
     })
   );
 });
+
+// Background Sync
+self.addEventListener('sync', (event: any) => {
+  if (event.tag === 'sync-inventory') {
+    // In a real scenario, we would trigger the sync here.
+    // However, since we need Supabase Auth, it's easier to handle it
+    // from the main thread via the 'online' event for now.
+    console.log('Background sync triggered');
+  }
+});

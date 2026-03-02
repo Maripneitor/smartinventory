@@ -4,13 +4,16 @@ import React, { useEffect, useState } from "react";
 import { ChevronLeft, Plus, LayoutGrid, List as ListIcon, Info, Loader2, Package as PackageIcon, MapPin, AlertTriangle } from "lucide-react";
 import NextLink from "next/link";
 import { cn } from "@/lib/utils";
-import { containersService, type Container } from "@/core/containers";
-import { itemsService, Item } from "@/core/items";
+import { type Container } from "@/entities/container/schema";
+import { type Item } from "@/entities/item/schema";
+import { containersService } from "@/core/containers";
+import { itemsService } from "@/core/items";
 import { createSignedPhotoUrl } from "@/core/storage";
 import { ContainerLabelPrinter } from "@/components/inventory/container-label-printer";
 import { InventoryCard } from "@/components/inventory/inventory-card";
 
-type ContainerWithLocation = Container & { locations: { name: string } };
+type ContainerWithLocation = Container & { locations?: { name?: string } | null };
+
 
 export default function ContainerDetail({ params }: { params: Promise<{ id: string }> }) {
     const { id } = React.use(params);
@@ -69,14 +72,14 @@ export default function ContainerDetail({ params }: { params: Promise<{ id: stri
                     <div className="h-10 px-3 flex flex-col justify-center rounded-xl bg-zinc-900 border border-white/5 min-w-[100px]">
                         <div className="flex justify-between items-center gap-2 mb-1">
                             <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500">Capacidad</span>
-                             <span className={cn("text-[8px] font-bold uppercase", isFull ? "text-red-400" : "text-zinc-400")}>
+                            <span className={cn("text-[8px] font-bold uppercase", isFull ? "text-red-400" : "text-zinc-400")}>
                                 {items.length}/{container.max_items || 50}
-                             </span>
+                            </span>
                         </div>
                         <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
-                            <div 
-                                className={cn("h-full transition-all duration-500", isFull ? "bg-red-500" : capacityPercent > 80 ? "bg-yellow-500" : "bg-blue-500")} 
-                                style={{ width: `${capacityPercent}%` }} 
+                            <div
+                                className={cn("h-full transition-all duration-500", isFull ? "bg-red-500" : capacityPercent > 80 ? "bg-yellow-500" : "bg-blue-500")}
+                                style={{ width: `${capacityPercent}%` }}
                             />
                         </div>
                     </div>
@@ -103,14 +106,14 @@ export default function ContainerDetail({ params }: { params: Promise<{ id: stri
                     {container.locations?.name || "Sin ubicación"}
                 </h2>
                 <h1 className="text-5xl font-extrabold tracking-tight text-white">{container.label}</h1>
-                
+
                 <div className="flex items-center gap-4 mt-2 text-xs font-medium text-zinc-500">
                     <div className="flex items-center gap-1.5">
-                        <PackageIcon className="h-3.5 w-3.5" /> 
+                        <PackageIcon className="h-3.5 w-3.5" />
                         <span>{items.length} objetos</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <Info className="h-3.5 w-3.5" /> 
+                        <Info className="h-3.5 w-3.5" />
                         <span className="font-mono text-zinc-600">ID: {container.id.slice(0, 8)}</span>
                     </div>
                 </div>
@@ -129,7 +132,7 @@ export default function ContainerDetail({ params }: { params: Promise<{ id: stri
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 ml-2">Vista</span>
                 </div>
-                
+
                 <NextLink
                     href={`/items/new?container=${container.id}`}
                     className="flex items-center gap-2 rounded-2xl bg-white text-black px-5 py-2.5 text-sm font-bold shadow-xl shadow-white/5 active:scale-95 transition-all"
@@ -141,10 +144,10 @@ export default function ContainerDetail({ params }: { params: Promise<{ id: stri
             {/* Items Grid */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 mt-2">
                 {items.map((item) => (
-                    <InventoryCard 
-                        key={item.id} 
-                        item={item} 
-                        signedUrl={signedUrls[item.id]} 
+                    <InventoryCard
+                        key={item.id}
+                        item={item}
+                        signedUrl={signedUrls[item.id]}
                     />
                 ))}
                 {items.length === 0 && (

@@ -5,8 +5,10 @@ import { Html5Qrcode } from "html5-qrcode";
 import { ChevronLeft, Camera, Loader2, Info, AlertCircle, CheckCircle2, RefreshCcw, X, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { containersService, Container } from "@/core/containers";
-import { itemsService, Item } from "@/core/items";
+import { type Container } from "@/entities/container/schema";
+import { type Item } from "@/entities/item/schema";
+import { containersService } from "@/core/containers";
+import { itemsService } from "@/core/items";
 import { createSignedPhotoUrl } from "@/core/storage";
 import { InventoryCard } from "@/components/inventory/inventory-card";
 
@@ -22,11 +24,17 @@ export default function ScanPage() {
 
     const onScanSuccess = useCallback(async (decodedText: string) => {
         if (fetchingXray) return;
-        
+
+        // Haptic feedback
+        if (typeof window !== "undefined" && window.navigator.vibrate) {
+            window.navigator.vibrate(200);
+        }
+
         try {
             setStatus("success");
-            
+
             let targetId = decodedText;
+
             try {
                 const url = new URL(decodedText);
                 if (url.pathname.includes('/containers/')) {
@@ -85,7 +93,7 @@ export default function ScanPage() {
                         { facingMode: "environment" },
                         { fps: 10, qrbox: { width: 250, height: 250 } },
                         onScanSuccess,
-                        () => {} 
+                        () => { }
                     );
                     setStatus("ready");
                 } else {
@@ -129,18 +137,18 @@ export default function ScanPage() {
                 {/* Scanner Window */}
                 <div className="relative w-full max-w-sm overflow-hidden rounded-[2.5rem] border border-white/10 bg-zinc-950 shadow-2xl">
                     <div id="reader" className="w-full aspect-square bg-black overflow-hidden object-cover"></div>
-                    
+
                     {/* Overlay de Enfoque */}
                     {status === "ready" && (
-                         <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                             <div className="w-64 h-64 border-2 border-blue-500/50 rounded-3xl relative">
-                                 <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-xl"></div>
-                                 <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-xl"></div>
-                                 <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-xl"></div>
-                                 <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-xl"></div>
-                                 <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500/30 animate-scan-line"></div>
-                             </div>
-                         </div>
+                        <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                            <div className="w-64 h-64 border-2 border-blue-500/50 rounded-3xl relative">
+                                <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-xl"></div>
+                                <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-xl"></div>
+                                <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-xl"></div>
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-xl"></div>
+                                <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500/30 animate-scan-line"></div>
+                            </div>
+                        </div>
                     )}
 
                     {/* Estados del Scanner */}
@@ -155,10 +163,10 @@ export default function ScanPage() {
 
                     {status === "success" && !xrayData && !fetchingXray && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-blue-600/20 backdrop-blur-xl animate-in fade-in duration-300 z-10">
-                             <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/50 animate-bounce">
+                            <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/50 animate-bounce">
                                 <CheckCircle2 className="h-10 w-10 text-white" />
-                             </div>
-                             <p className="mt-4 text-sm font-bold text-white uppercase tracking-widest">¡Caja Detectada!</p>
+                            </div>
+                            <p className="mt-4 text-sm font-bold text-white uppercase tracking-widest">¡Caja Detectada!</p>
                         </div>
                     )}
 
@@ -166,7 +174,7 @@ export default function ScanPage() {
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/20 backdrop-blur-xl p-8 text-center z-10">
                             <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
                             <p className="text-sm font-bold text-white mb-2">{errorMsg}</p>
-                            <button 
+                            <button
                                 onClick={() => window.location.reload()}
                                 className="flex items-center gap-2 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold uppercase transition-all"
                             >
@@ -196,7 +204,7 @@ export default function ScanPage() {
                                 <button onClick={resetScanner} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-zinc-400">
                                     <X className="h-6 w-6" />
                                 </button>
-                                <Link 
+                                <Link
                                     href={`/containers/${xrayData.container.id}`}
                                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl text-xs font-bold text-white uppercase tracking-tighter shadow-lg shadow-blue-500/20"
                                 >
@@ -212,10 +220,10 @@ export default function ScanPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 {xrayData.items.map(item => (
-                                    <InventoryCard 
-                                        key={item.id} 
-                                        item={item} 
-                                        signedUrl={xrayData.signedUrls[item.id]} 
+                                    <InventoryCard
+                                        key={item.id}
+                                        item={item}
+                                        signedUrl={xrayData.signedUrls[item.id]}
                                     />
                                 ))}
                                 {xrayData.items.length === 0 && (
@@ -225,14 +233,14 @@ export default function ScanPage() {
                                 )}
                             </div>
                         </div>
-                        
+
                         <div className="p-6 bg-transparent border-t border-white/5">
-                             <button 
+                            <button
                                 onClick={resetScanner}
                                 className="w-full py-4 rounded-2xl bg-white text-black font-bold text-lg active:scale-95 transition-all shadow-xl shadow-white/5"
-                             >
+                            >
                                 Escanear otra caja
-                             </button>
+                            </button>
                         </div>
                     </div>
                 )}
