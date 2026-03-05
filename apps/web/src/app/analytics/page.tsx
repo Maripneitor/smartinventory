@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
+import { Spinner } from "@/components/ui/spinner";
+import { Card } from "@/components/ui/card";
+
 export default function AnalyticsPage() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -83,7 +86,7 @@ export default function AnalyticsPage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
-                <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+                <Spinner size="lg" />
                 <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Calculando Insights...</p>
             </div>
         );
@@ -115,7 +118,7 @@ export default function AnalyticsPage() {
             {/* Charts Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Categories */}
-                <div className="rounded-[2.5rem] bg-zinc-900/30 border border-white/5 p-8 flex flex-col gap-6">
+                <Card variant="glass" className="p-8 flex flex-col gap-6 rounded-[2.5rem]">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col gap-1">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Categorías</p>
@@ -126,15 +129,15 @@ export default function AnalyticsPage() {
 
                     <div className="flex flex-col gap-4">
                         {Object.entries(stats.categoryBreakdown)
-                            .sort((a, b) => b[1] - a[1])
+                            .sort((a, b) => (b[1] as number) - (a[1] as number))
                             .slice(0, 5)
                             .map(([cat, count]) => {
-                                const percentage = (count / stats.totalItems) * 100;
+                                const percentage = (count as number / stats.totalItems) * 100;
                                 return (
                                     <div key={cat} className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="font-bold text-zinc-400 truncate max-w-[140px]">{cat}</span>
-                                            <span className="text-white font-black">{count} uds.</span>
+                                            <span className="text-white font-black">{count as number} uds.</span>
                                         </div>
                                         <div className="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden">
                                             <div
@@ -149,10 +152,10 @@ export default function AnalyticsPage() {
                             <p className="text-center text-zinc-700 text-sm py-4 italic">No hay suficientes datos</p>
                         )}
                     </div>
-                </div>
+                </Card>
 
                 {/* State / Condition */}
-                <div className="rounded-[2.5rem] bg-zinc-900/30 border border-white/5 p-8 flex flex-col gap-6">
+                <Card variant="glass" className="p-8 flex flex-col gap-6 rounded-[2.5rem]">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col gap-1">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Estado</p>
@@ -165,7 +168,7 @@ export default function AnalyticsPage() {
                         <div className="flex items-end justify-between h-32 gap-4">
                             {["new", "used", "defective"].map((cond) => {
                                 const count = stats.conditionBreakdown[cond] || 0;
-                                const max = Math.max(...Object.values(stats.conditionBreakdown), 1);
+                                const max = Math.max(...Object.values(stats.conditionBreakdown).map(v => v as number), 1);
                                 const height = (count / max) * 100;
                                 return (
                                     <div key={cond} className="flex-1 flex flex-col items-center gap-3 h-full justify-end">
@@ -191,10 +194,10 @@ export default function AnalyticsPage() {
                             })}
                         </div>
                     </div>
-                </div>
+                </Card>
 
                 {/* Top Containers */}
-                <div className="rounded-[2.5rem] bg-zinc-900/30 border border-white/5 p-8 flex flex-col gap-6 col-span-1 md:col-span-2">
+                <Card variant="glass" className="p-8 flex flex-col gap-6 col-span-1 md:col-span-2 rounded-[2.5rem]">
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col gap-1">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Ocupación</p>
@@ -219,7 +222,7 @@ export default function AnalyticsPage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </Card>
             </div>
 
             {/* AI Insight Teaser */}
@@ -294,7 +297,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
     };
 
     return (
-        <div className="rounded-[2rem] bg-zinc-900/30 border border-white/5 p-6 flex flex-col gap-4 active:scale-95 transition-all">
+        <Card variant={color as any} interactive className="flex flex-col gap-4">
             <div className={cn("h-10 w-10 flex items-center justify-center rounded-xl", colorClasses[color])}>
                 <Icon className="h-5 w-5" />
             </div>
@@ -302,6 +305,6 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
                 <p className="text-3xl font-black text-white">{value}</p>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mt-1">{label}</p>
             </div>
-        </div>
+        </Card>
     );
 }

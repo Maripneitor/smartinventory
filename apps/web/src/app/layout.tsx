@@ -35,7 +35,8 @@ export const viewport: Viewport = {
 };
 
 import { ToastProvider } from "@/providers/toast-provider";
-import { OfflineHandler } from "@/components/shared/offline-handler";
+import { ThemeProvider } from "@/components/theme-provider";
+import { OfflineSync } from "@/components/offline-sync";
 
 export default function RootLayout({
   children,
@@ -43,25 +44,32 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body
         suppressHydrationWarning
         className={cn(
-          "min-h-screen bg-black font-sans antialiased selection:bg-blue-500/30",
+          "min-h-screen bg-background font-sans antialiased selection:bg-blue-500/30",
           inter.variable,
           outfit.variable
         )}
       >
-        <ToastProvider>
-          <OfflineHandler />
-          <Sidebar />
-          <main className="relative flex min-h-screen flex-col lg:pl-72 pb-24 lg:pb-0">
-            <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
-              {children}
-            </div>
-          </main>
-          <BottomNav />
-        </ToastProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ToastProvider>
+            <OfflineSync />
+            <Sidebar />
+            <main className="relative flex min-h-screen flex-col lg:pl-72 pb-24 lg:pb-0">
+              <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+                {children}
+              </div>
+            </main>
+            <BottomNav />
+          </ToastProvider>
+        </ThemeProvider>
 
 
 

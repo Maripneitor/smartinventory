@@ -9,7 +9,7 @@ export const ContainerSchema = z.object({
     id: z.string().uuid(),
     user_id: z.string().uuid(),
     location_id: z.string().uuid().nullable().optional(),
-    label: z.string().min(1),
+    label: z.string().min(1).max(100),
     qr_payload: z.string().min(1),
     created_at: z.string().datetime({ offset: true }).optional(),
     // Relación join (opcional, cuando se hace select con locations)
@@ -23,7 +23,7 @@ export type Container = z.infer<typeof ContainerSchema>;
 
 export const CreateContainerSchema = z.object({
     id: z.string().uuid(),
-    label: z.string().min(1, 'El nombre es requerido'),
+    label: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
     location_id: z.string().uuid('Selecciona una ubicación'),
     qr_payload: z.string().min(1),
 });

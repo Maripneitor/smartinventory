@@ -87,3 +87,16 @@ export async function createSignedPhotoUrl(photo_path: string, expiresIn = 1800)
     if (error) throw error;
     return data.signedUrl;
 }
+
+/** Obtiene múltiples URLs firmadas en una sola petición a la DB para evitar N+1 requests */
+export async function createSignedPhotoUrls(paths: string[], expiresIn = 1800) {
+    if (!paths.length) return [];
+
+    const supabase = createClient();
+    const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .createSignedUrls(paths, expiresIn);
+
+    if (error) throw error;
+    return data; // Array de { error, path, signedUrl }
+}

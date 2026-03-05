@@ -10,15 +10,22 @@ interface InventoryCardProps {
     className?: string;
 }
 
+import { Card } from "@/components/ui/card";
+
 export function InventoryCard({ item, signedUrl, className }: InventoryCardProps) {
     return (
-        <div className={cn("glass-card group relative flex flex-col gap-3 p-2 transition-all hover:bg-white/2", className)}>
+        <Card
+            variant="glass"
+            interactive
+            noPadding
+            className={cn("group flex flex-col gap-3 p-2", className)}
+        >
             <div className="aspect-square w-full overflow-hidden rounded-2xl bg-zinc-950 border border-white/5 relative">
                 {signedUrl ? (
-                    <img 
-                        src={signedUrl} 
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                        alt={item.name} 
+                    <img
+                        src={signedUrl}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        alt={item.name}
                         loading="lazy"
                     />
                 ) : (
@@ -48,14 +55,14 @@ export function InventoryCard({ item, signedUrl, className }: InventoryCardProps
                     </span>
                     <span className={cn(
                         "rounded-md px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-tighter",
-                        item.condition === 'new' ? "bg-emerald-500/10 text-emerald-500" : 
-                        item.condition === 'defective' ? "bg-red-500/10 text-red-500" : 
-                        "bg-zinc-900 text-zinc-400"
+                        item.condition === 'new' ? "bg-emerald-500/10 text-emerald-500" :
+                            item.condition === 'defective' ? "bg-red-500/10 text-red-500" :
+                                "bg-zinc-900 text-zinc-400"
                     )}>
                         {item.condition === 'new' ? 'Nuevo' : item.condition === 'used' ? 'Usado' : 'Defecto'}
                     </span>
                 </div>
             </div>
-        </div>
+        </Card>
     );
 }

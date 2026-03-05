@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient, getDevUser } from "@/lib/supabase/browser";
-import { ChevronLeft, User, Bell, Shield, HelpCircle, LogOut, ChevronRight, Laptop, MapPin, Database } from "lucide-react";
+import { ChevronLeft, User, Bell, Shield, HelpCircle, LogOut, ChevronRight, Laptop, MapPin, Database, Printer } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -20,6 +20,7 @@ export default function MorePage() {
 
     const menuItems = [
         { label: "Perfil", icon: User, desc: "Gestionar tus datos personales" },
+        { label: "Centro de Impresión", icon: Printer, desc: "Generar etiquetas QR para cajas", href: "/labels" },
         { label: "Ubicaciones", icon: MapPin, desc: "Gestionar habitaciones y estantes", href: "/locations" },
         { label: "Notificaciones", icon: Bell, desc: "Alertas de stock y préstamos" },
         { label: "Sincronización Cloud", icon: Database, desc: "Estado de la base de datos", status: "Conectado" },

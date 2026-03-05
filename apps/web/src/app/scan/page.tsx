@@ -9,7 +9,7 @@ import { type Container } from "@/entities/container/schema";
 import { type Item } from "@/entities/item/schema";
 import { containersService } from "@/core/containers";
 import { itemsService } from "@/core/items";
-import { createSignedPhotoUrl } from "@/core/storage";
+import { createSignedPhotoUrls } from "@/core/storage";
 import { InventoryCard } from "@/components/inventory/inventory-card";
 
 export default function ScanPage() {
@@ -51,15 +51,22 @@ export default function ScanPage() {
                     ]);
 
                     const urls: Record<string, string> = {};
-                    await Promise.all(items.map(async (item) => {
-                        if (item.photo_path) {
-                            try {
-                                urls[item.id] = await createSignedPhotoUrl(item.photo_path);
-                            } catch (e) {
-                                console.error("Error signing URL", e);
-                            }
+                    const itemsConFoto = items.filter(i => !!i.photo_path);
+                    const paths = itemsConFoto.map(i => i.photo_path as string);
+
+                    if (paths.length > 0) {
+                        try {
+                            const signedData = await createSignedPhotoUrls(paths);
+                            itemsConFoto.forEach(item => {
+                                const found = signedData.find((d: any) => d.path === item.photo_path);
+                                if (found && !found.error && found.signedUrl) {
+                                    urls[item.id] = found.signedUrl;
+                                }
+                            });
+                        } catch (e) {
+                            console.error("Error signing URLs", e);
                         }
-                    }));
+                    }
 
                     setXrayData({ container, items, signedUrls: urls });
                     // Detener el scanner para ahorrar recursos mientras ve los rayos X
@@ -100,7 +107,14 @@ export default function ScanPage() {
                     throw new Error("No se detectaron cámaras.");
                 }
             } catch (err: unknown) {
-                const message = err instanceof Error ? err.message : "Error al acceder a la cámara.";
+                let message = "Error al acceder a la cámara.";
+                if (err instanceof Error) {
+                    if (err.name === "NotAllowedError" || err.message.includes("Permission denied")) {
+                        message = "Permiso de cámara denegado. Por favor, habilítalo en los ajustes de tu navegador para poder escanear.";
+                    } else {
+                        message = err.message;
+                    }
+                }
                 console.error(err);
                 setStatus("error");
                 setErrorMsg(message);

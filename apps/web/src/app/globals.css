@@ -4,11 +4,11 @@
   --font-sans: var(--font-inter);
   --font-display: var(--font-outfit);
 
-  --color-background: #000000;
-  --color-foreground: #ffffff;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-  --color-card: rgba(255, 255, 255, 0.05);
-  --color-card-foreground: #ffffff;
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
   --color-primary: #3b82f6;
   --color-primary-foreground: #ffffff;
@@ -19,7 +19,7 @@
   --color-muted: #6b7280;
   --color-muted-foreground: #9ca3af;
 
-  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border: var(--border);
 
   --color-success: #10b981;
   --color-error: #ef4444;
@@ -29,8 +29,21 @@
 
 @layer base {
   :root {
-    --background: #000000;
-    --foreground: #ffffff;
+    --background: #ffffff;
+    --foreground: #09090b;
+    --card: #f4f4f5;
+    --card-foreground: #09090b;
+    --border: rgba(0, 0, 0, 0.1);
+  }
+
+  .dark {
+    --background: #09090b;
+    /* zinc-950 */
+    --foreground: #fafafa;
+    --card: #18181b;
+    /* zinc-900 */
+    --card-foreground: #fafafa;
+    --border: rgba(255, 255, 255, 0.1);
   }
 
   body {
@@ -43,10 +56,10 @@
 }
 
 @utility glass {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--color-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border);
 }
 
 @utility glass-card {
@@ -78,7 +91,7 @@
   .btn-primary {
     @apply bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20 active:shadow-none;
   }
-  
+
   .input-modern {
     @apply h-12 w-full rounded-xl border border-white/5 bg-zinc-900 px-4 text-white focus:border-blue-500 focus:outline-none transition-all placeholder:text-zinc-700;
   }

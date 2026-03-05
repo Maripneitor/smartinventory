@@ -1,13 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Search as SearchIcon, ChevronLeft, Sparkles, Loader2, Zap } from "lucide-react";
+import { Search as SearchIcon, ChevronLeft, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
 import { hybridSearch, textSearch } from "@/core/ai";
 import { createSignedPhotoUrl } from "@/core/storage";
 import { cn } from "@/lib/utils";
 import { InventoryCard } from "@/components/inventory/inventory-card";
 import { Item } from "@/core/items";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { Card } from "@/components/ui/card";
 
 type SearchMode = "hybrid" | "text";
 
@@ -40,7 +44,6 @@ export default function SearchPage() {
 
             setResults(data);
 
-            // Firmar URLs de fotos en batch
             const urls: Record<string, string> = {};
             await Promise.allSettled(
                 data
@@ -65,70 +68,78 @@ export default function SearchPage() {
         });
     }
 
-    function toggleMode() {
-        const next: SearchMode = mode === "hybrid" ? "text" : "hybrid";
-        setMode(next);
-        if (query.trim()) runSearch(query, next);
-    }
-
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8 pb-20">
             {/* Header */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 sticky top-0 z-20 bg-background/80 backdrop-blur-xl py-4 -mx-4 px-4 border-b border-white/5">
                 <Link
                     href="/"
-                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400 active:scale-95 transition-all"
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-400 active:scale-95 transition-all hover:bg-zinc-800 border border-white/5"
                     aria-label="Volver"
                 >
                     <ChevronLeft className="h-6 w-6" />
                 </Link>
 
                 <form onSubmit={handleSearch} className="relative flex-1" role="search">
-                    <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-                    <input
+                    <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors" />
+                    <Input
                         id="search-input"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="¿Qué estás buscando? (ej: cables de video)"
-                        className="h-12 w-full rounded-2xl border border-white/5 bg-zinc-900 pl-12 pr-24 text-white placeholder:text-zinc-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all font-medium"
+                        className="pl-12 pr-12 h-14 bg-zinc-950/50 rounded-[1.5rem]"
                         autoFocus
                         aria-label="Campo de búsqueda"
                     />
-                    <button
-                        type="submit"
-                        id="search-submit"
-                        disabled={isPending}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-blue-500 disabled:opacity-30 active:scale-90 transition-transform"
-                        aria-label="Buscar"
-                    >
-                        {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                    </button>
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        {isPending ? (
+                            <div className="p-2"><Spinner size="sm" /></div>
+                        ) : (
+                            <Button
+                                type="submit"
+                                variant="ghost"
+                                className="h-10 w-10 p-0 rounded-xl text-blue-500 hover:bg-blue-500/10"
+                            >
+                                <Sparkles className="h-5 w-5" />
+                            </Button>
+                        )}
+                    </div>
                 </form>
             </div>
 
             {/* Mode Toggle */}
-            <div className="flex items-center gap-2">
-                <button
-                    onClick={toggleMode}
-                    className={cn(
-                        "flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all",
-                        mode === "hybrid"
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                            : "bg-zinc-900 text-zinc-500 border border-white/5"
-                    )}
-                    aria-label={`Modo de búsqueda: ${mode === "hybrid" ? "Híbrida (IA + Texto)" : "Solo Texto"}`}
-                >
-                    {mode === "hybrid"
-                        ? <><Sparkles className="h-3 w-3" /> Híbrida</>
-                        : <><Zap className="h-3 w-3" /> Clásica</>
-                    }
-                </button>
-                <span className="text-[10px] text-zinc-600 font-medium">
-                    {mode === "hybrid"
-                        ? "Búsqueda semántica con IA"
-                        : "Búsqueda por palabras exactas"
-                    }
-                </span>
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Motor de Búsqueda</h2>
+                    <span className="text-[10px] font-bold text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded-md border border-white/5">
+                        {mode === "hybrid" ? "IA + Palabras Clave" : "Coincidencia Exacta"}
+                    </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 p-1 bg-zinc-950 rounded-[1.5rem] border border-white/5">
+                    <button
+                        onClick={() => setMode("hybrid")}
+                        className={cn(
+                            "flex items-center justify-center gap-2 rounded-[1.25rem] py-3 text-[11px] font-black uppercase tracking-widest transition-all",
+                            mode === "hybrid"
+                                ? "bg-blue-600 text-white shadow-xl shadow-blue-500/20"
+                                : "text-zinc-500 hover:text-zinc-300"
+                        )}
+                    >
+                        <Sparkles className="h-3.5 w-3.5" /> Híbrida (IA)
+                    </button>
+                    <button
+                        onClick={() => setMode("text")}
+                        className={cn(
+                            "flex items-center justify-center gap-2 rounded-[1.25rem] py-3 text-[11px] font-black uppercase tracking-widest transition-all",
+                            mode === "text"
+                                ? "bg-zinc-800 text-white border border-white/10 shadow-xl"
+                                : "text-zinc-500 hover:text-zinc-300"
+                        )}
+                    >
+                        <Zap className="h-3.5 w-3.5" /> Clásica
+                    </button>
+                </div>
             </div>
 
             {/* Error */}
@@ -153,16 +164,15 @@ export default function SearchPage() {
 
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4" role="list">
                     {results.map((item) => (
-                        <Link 
-                            key={item.id} 
+                        <Link
+                            key={item.id}
                             href={`/containers/${item.container_id}`}
                             className="active:scale-[0.98] transition-transform"
                         >
-                            <InventoryCard 
-                                item={item} 
-                                signedUrl={signedUrls[item.id]} 
+                            <InventoryCard
+                                item={item}
+                                signedUrl={signedUrls[item.id]}
                             />
-                            {/* Score info floating overlay for development/power users if needed */}
                             {mode === "hybrid" && (
                                 <div className="mt-1 px-2 flex justify-end">
                                     <span className="text-[8px] font-mono text-zinc-700">
@@ -193,4 +203,3 @@ export default function SearchPage() {
         </div>
     );
 }
-

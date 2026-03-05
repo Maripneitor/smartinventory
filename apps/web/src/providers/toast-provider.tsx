@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                                 {t.type === "success" && <CheckCircle2 className="h-5 w-5" />}
                                 {t.type === "error" && <AlertCircle className="h-5 w-5" />}
                                 {t.type === "info" && <Info className="h-5 w-5" />}
-                                {t.type === "loading" && <Loader2 className="h-5 w-5 animate-spin" />}
+                                {t.type === "loading" && <Spinner size="sm" />}
                             </div>
                             <p className="flex-1 text-sm font-bold tracking-tight">{t.message}</p>
                             <button

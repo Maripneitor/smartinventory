@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Box, Scan, MoreHorizontal, Home, Package2 } from "lucide-react";
+import { Search, Box, Scan, MoreHorizontal, Home, Package2, Printer } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
     { label: "Búsqueda Semántica", icon: Search, href: "/search" },
     { label: "Mis Lugares", icon: Package2, href: "/locations" },
     { label: "Inventario de Cajas", icon: Box, href: "/containers" },
+    { label: "Centro de Impresión", icon: Printer, href: "/labels" },
     { label: "Configuración", icon: MoreHorizontal, href: "/more" },
 ];
 
