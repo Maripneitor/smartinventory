@@ -63,9 +63,10 @@ export function ContainerForm() {
                     />
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 relative">
                     <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Ubicación Física</label>
                     <LocationPicker value={locationId} onChange={setLocationId} />
+                    <p className="text-[10px] text-zinc-500 italic mt-1">¿Dónde estará guardada esta caja?</p>
                 </div>
 
                 <div className="flex flex-col gap-2">

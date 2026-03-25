@@ -61,3 +61,6 @@ Icon
 *.swp
 *.swo
 
+# --- Local Manifest ---
+SETUP_KEY.md
+

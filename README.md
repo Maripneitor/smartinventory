@@ -6,6 +6,7 @@
 
 ## 📋 Requisitos del Sistema
 
+<<<<<<< HEAD
 ### 1. Requisitos Funcionales (Lo que la app HACE)
 
 - **🧠 Análisis de Objetos con IA**: Identificación automática de nombres, categorías, etiquetas y descripciones a partir de una sola foto.
@@ -68,12 +69,61 @@ Gestión de perfil, estado de sincronización y utilidades como el generador de 
 - **Backend**: Supabase (Postgres, Auth, Storage).
 - **Cerebro**: Gemini 2.0 Flash + Groq (Llama 3.2).
 - **Base de Datos**: PGVector + Índices HNSW para búsqueda vectorial.
+=======
+- **🧠 Análisis con IA Multi-Motor (Gemini/Groq/Cloud Vision)**: Sube una foto de un objeto y la IA rellenará automáticamente el nombre, categoría, descripción y etiquetas.
+- **⚡ Caché de IA Inteligente**: Los resultados del análisis se guardan localmente para ahorrar API calls y optimizar el rendimiento.
+- **🖼️ Compresión Proactiva**: Las fotos se comprimen en el cliente antes de subir, ahorrando datos y tiempo.
+- **🛡️ Cerebro Híbrido & Failover**: Sistema de redundancia automática entre Gemini, Groq y Google Cloud Vision.
+- **🔍 Búsqueda Semántica Vectorial**: Búsqueda ultra-rápida usando índices **HNSW** en Postgres para encontrar objetos por concepto, no solo por nombre.
+- **📍 Gestión de Ubicaciones Jerárquica**: Organiza tus pertenencias en una estructura lógica de ubicaciones y sub-ubicaciones con un picker intuitivo.
+- **🖨️ Etiquetas Profesionales**: Genera etiquetas individuales o hojas completas para etiquetas Avery (5160, 5163) listas para imprimir.
+- **📱 PWA & Offline Readiness**: Instala la app y consulta tu inventario incluso sin conexión.
+>>>>>>> 4c4af39 (Actualización: Cloud Vision AI, gestión de ubicaciones, router de funciones local y README)
 
 ---
 
 ## 🚀 Guía de Inicio Rápido
 
+<<<<<<< HEAD
 ### Comandos de Desarrollo
+=======
+### 1. Requisitos
+
+- [Node.js](https://nodejs.org/) (versión 18+)
+- [Supabase CLI](https://supabase.com/docs/guides/cli)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (para ejecución local)
+
+### 2. Configuración (.env)
+
+**Apps/Web/.env.local:**
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
+```
+
+**Supabase/.env:**
+
+```env
+GEMINI_API_KEY=tu-api-key
+GROQ_API_KEY=tu-api-key
+CLOUD_VISION_API_KEY=tu-api-key # Opcional: Para el motor de Cloud Vision
+```
+
+### 3. Base de Datos & Local Dev
+
+Si usas Supabase Local:
+
+```bash
+supabase start
+```
+
+O si prefieres el despliegue manual, ejecuta las migraciones en `/supabase/migrations/` en orden correlativo.
+
+### 4. Salud del Sistema
+
+Puedes verificar que todo esté bien configurado con:
+>>>>>>> 4c4af39 (Actualización: Cloud Vision AI, gestión de ubicaciones, router de funciones local y README)
 
 ```bash
 # Iniciar servicios de Supabase (Docker)
@@ -86,4 +136,27 @@ npx supabase db reset
 npm run dev
 ```
 
+<<<<<<< HEAD
 Desarrollado con precisión técnica para transformar el almacenamiento tradicional en un sistema inteligente. 🚀
+=======
+---
+
+## 🛠️ Tecnologías
+
+- **Frontend**: Next.js 15+, Tailwind CSS, Zustand, html5-qrcode.
+- **Backend**: Supabase (Postgres + pgvector, Auth, Storage, Edge Functions).
+- **IA**: Google Gemini 2.0, Llama 3.2 via Groq & Google Cloud Vision.
+- **Salud del Sistema**: Docker & Healthchecks optimizados para estabilidad local.
+- **PDF**: jsPDF para generación de etiquetas.
+
+---
+
+## 📦 Estructura del Proyecto
+
+- `@/core`: Lógica de negocio consumible por toda la app.
+- `apps/web`: Aplicación principal Next.js.
+- `supabase/functions`: Cerebros de IA en la nube (Edge Functions).
+- `supabase/migrations`: Planos de la base de datos y esquemas vectoriales.
+
+Desarrollado con ❤️ para organizar el caos. ¡Disfruta tu inventario inteligente!
+>>>>>>> 4c4af39 (Actualización: Cloud Vision AI, gestión de ubicaciones, router de funciones local y README)

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { locationsService, listLocations, type Location } from "@/core/locations";
+import { listLocations, type Location } from "@/core/locations";
 import { Button } from "@/components/ui/button";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -63,46 +63,55 @@ export function LocationPicker(props: {
         <div className="relative space-y-2">
             <Button
                 type="button"
-                variant="outline"
-                className="w-full justify-between font-normal"
+                variant="secondary"
+                className="w-full justify-between font-bold bg-zinc-900 border border-white/5 hover:bg-zinc-800 hover:border-white/10"
                 onClick={() => setOpen(!open)}
             >
-                <span className="truncate">{selectedName}</span>
+                <div className="flex items-center gap-2 truncate">
+                    <MapPin className="h-4 w-4 text-blue-500" />
+                    <span className="truncate">{selectedName}</span>
+                </div>
                 {open ? <ChevronUp className="h-4 w-4 opacity-50" /> : <ChevronDown className="h-4 w-4 opacity-50" />}
             </Button>
 
             {open && (
-                <div className="glass-card absolute z-50 mt-1 w-full overflow-hidden rounded-2xl p-2 shadow-2xl">
-                    <div className="max-h-64 overflow-y-auto space-y-1">
-                        {rows.length === 0 ? (
-                            <div className="p-4 text-center space-y-3">
-                                <p className="text-xs text-zinc-600 italic">No hay ubicaciones creadas aún.</p>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    className="w-full py-2 text-xs"
-                                    onClick={() => window.location.href = '/locations'}
-                                >
-                                    Ir a gestionar Lugares
-                                </Button>
-                            </div>
-                        ) : (
-                            <>
-                                {renderNode(null)}
-                                <div className="mt-2 pt-2 border-t border-white/5">
+                <>
+                    <div 
+                        className="fixed inset-0 z-40 bg-black/5" 
+                        onClick={() => setOpen(false)}
+                    />
+                    <div className="glass-card absolute z-50 mt-2 w-full overflow-hidden rounded-2xl p-2 shadow-2xl border border-white/10 ring-1 ring-black/20">
+                        <div className="max-h-64 overflow-y-auto space-y-1">
+                            {rows.length === 0 ? (
+                                <div className="p-4 text-center space-y-3">
+                                    <p className="text-xs text-zinc-600 italic">No hay ubicaciones creadas aún.</p>
                                     <Button
                                         type="button"
-                                        variant="ghost"
-                                        className="w-full text-zinc-500 text-[10px]"
+                                        variant="secondary"
+                                        className="w-full py-2 text-xs"
                                         onClick={() => window.location.href = '/locations'}
                                     >
-                                        + Gestionar Ubicaciones
+                                        Ir a gestionar Lugares
                                     </Button>
                                 </div>
-                            </>
-                        )}
+                            ) : (
+                                <>
+                                    {renderNode(null)}
+                                    <div className="mt-2 pt-2 border-t border-white/5">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="w-full text-zinc-500 text-[10px]"
+                                            onClick={() => window.location.href = '/locations'}
+                                        >
+                                            + Gestionar Ubicaciones
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>
+                </>
             )}
         </div>
     );
