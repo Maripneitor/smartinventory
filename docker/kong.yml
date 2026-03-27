@@ -7,10 +7,10 @@ _format_version: "1.1"
 consumers:
   - username: anon
     keyauth_credentials:
-      - key: ${SUPABASE_ANON_KEY}
+      - key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
   - username: service_role
     keyauth_credentials:
-      - key: ${SUPABASE_SERVICE_KEY}
+      - key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
 
 acls:
   - consumer: anon
@@ -47,6 +47,36 @@ services:
         strip_path: true
         paths:
           - /auth/v1/authorize
+    plugins:
+      - name: cors
+
+  - name: auth-v1-open-otp
+    url: http://auth:9999/otp
+    routes:
+      - name: auth-v1-open-otp
+        strip_path: true
+        paths:
+          - /auth/v1/otp
+    plugins:
+      - name: cors
+
+  - name: auth-v1-open-signup
+    url: http://auth:9999/signup
+    routes:
+      - name: auth-v1-open-signup
+        strip_path: true
+        paths:
+          - /auth/v1/signup
+    plugins:
+      - name: cors
+
+  - name: auth-v1-open-resend
+    url: http://auth:9999/resend
+    routes:
+      - name: auth-v1-open-resend
+        strip_path: true
+        paths:
+          - /auth/v1/resend
     plugins:
       - name: cors
 

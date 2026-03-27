@@ -189,7 +189,7 @@ Si no estás seguro: usa null. No inventes marcas/modelos.
   throw lastErr ?? new Error("Groq failed");
 }
 
-Deno.serve(async (req) => {
+export default async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
 
   try {

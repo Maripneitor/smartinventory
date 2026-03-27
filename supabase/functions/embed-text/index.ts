@@ -16,7 +16,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-Deno.serve(async (req: Request) => {
+export default async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response(null, {
             status: 204,

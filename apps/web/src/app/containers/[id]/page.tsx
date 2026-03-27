@@ -69,8 +69,9 @@ export default function ContainerDetail({ params }: { params: Promise<{ id: stri
     if (loading) return <div className="flex h-screen items-center justify-center"><Spinner /></div>;
     if (!container) return <div className="text-center py-20 text-zinc-500 min-h-screen flex items-center justify-center">Caja no encontrada.</div>;
 
-    const isFull = items.length >= (container.max_items || 50);
-    const capacityPercent = Math.min(100, (items.length / (container.max_items || 50)) * 100);
+    const maxCap = (container as any).max_items || 50;
+    const isFull = items.length >= maxCap;
+    const capacityPercent = Math.min(100, (items.length / maxCap) * 100);
 
     return (
         <div className="flex flex-col gap-8 pb-40">
@@ -89,7 +90,7 @@ export default function ContainerDetail({ params }: { params: Promise<{ id: stri
                         <div className="flex justify-between items-center gap-2 mb-1">
                             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Cupo</span>
                             <span className={cn("text-[10px] font-black uppercase", isFull ? "text-red-500" : "text-zinc-400")}>
-                                {items.length}/{container.max_items || 50}
+                                {items.length}/{maxCap}
                             </span>
                         </div>
                         <div className="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden border border-white/5">
@@ -114,7 +115,7 @@ export default function ContainerDetail({ params }: { params: Promise<{ id: stri
                     </div>
                     <div className="flex-1">
                         <h4 className="text-sm font-black text-red-400 uppercase tracking-widest leading-none mb-1">Caja al Límite</h4>
-                        <p className="text-xs text-red-400/60 font-medium">Has alcanzado el máximo de {container.max_items} objetos.</p>
+                        <p className="text-xs text-red-400/60 font-medium">Has alcanzado el máximo de {maxCap} objetos.</p>
                     </div>
                 </div>
             )}

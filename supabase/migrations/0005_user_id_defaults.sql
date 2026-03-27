@@ -6,7 +6,7 @@
 CREATE OR REPLACE FUNCTION set_user_id()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.user_id := auth.uid();
+    NEW.user_id := COALESCE(auth.uid(), NEW.user_id);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

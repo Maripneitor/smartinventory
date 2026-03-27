@@ -138,7 +138,7 @@ export const itemsService = {
                 .limit(1);
 
             if (error) throw error;
-            return data?.[0] as { container_id: string; containers: { label: string } } | undefined;
+            return data?.[0] as any as { container_id: string; containers: { label: string } } | undefined;
         } catch (e) {
             // Very basic offline suggestion
             const local = await db.items.where("category").equals(category).first();

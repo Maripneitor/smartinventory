@@ -352,7 +352,7 @@ export default function LabelsPage() {
                                     onClick={generatePDF}
                                     className="btn-primary py-2 px-5 text-sm h-10 flex items-center gap-2"
                                 >
-                                    <FileDown className="h-4 w-4" />
+                                    <Download className="h-4 w-4" />
                                     Descargar PDF
                                 </button>
                             </div>

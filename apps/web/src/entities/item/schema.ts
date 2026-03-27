@@ -22,6 +22,7 @@ export const ItemSchema = z.object({
     belongs_to_item_id: z.string().uuid().nullable().optional(),
     tags: z.array(z.string()).default([]),
     embedding: z.array(z.number()).nullable().optional(),
+    ai_metadata: z.any().optional(),
     created_at: z.string().datetime({ offset: true }).optional(),
     updated_at: z.string().datetime({ offset: true }).optional(),
 });
@@ -42,6 +43,7 @@ export const CreateItemSchema = z.object({
     belongs_to_item_id: z.string().uuid().nullable().optional(),
     photo_path: z.string().nullable().optional(),
     photo_mime: z.string().nullable().optional(),
+    ai_metadata: z.any().optional(),
 });
 
 export type CreateItemInput = z.infer<typeof CreateItemSchema>;

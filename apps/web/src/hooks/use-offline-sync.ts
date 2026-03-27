@@ -16,7 +16,7 @@ export function useOfflineSync() {
 
         const handleOffline = () => {
             setIsOnline(false);
-            toast("Operando sin conexión. Los cambios se guardarán localmente.", "warning");
+            toast("Operando sin conexión. Los cambios se guardarán localmente.", "info");
         };
 
         window.addEventListener("online", handleOnline);
