@@ -1,4 +1,11 @@
 import { cache } from '@/core/utils/cache';
+import { parseAIResponse } from '@/core/utils/jsonParser';
+
+export interface AIAccessory {
+  name: string;
+  isIncluded: boolean;
+  details?: string;
+}
 
 export interface AIAnalysisResult {
   name: string;
@@ -8,6 +15,10 @@ export interface AIAnalysisResult {
   confidence: number;
   needsReview: boolean;
   alternativeNames?: string[];
+  // ── Campos nuevos ──────────────────────────────────────────────────────────
+  accessories?: AIAccessory[];
+  technical_specs?: string;
+  condition?: string;
 }
 
 interface AIError {
@@ -108,11 +119,34 @@ class RobustAIService {
         body: JSON.stringify({
           contents: [{
             parts: [
-              { text: "Analiza esta imagen y extrae la información en formato JSON estricto: { \"name\": \"Nombre del producto\", \"category\": \"Electrónica, Herramientas, Ropa, Documentos, Muebles, Cocina, Deportes, Juguetes o Otros\", \"description\": \"Corta descripcion del uso o características\", \"tags\": [\"array\", \"de\", \"etiquetas\"], \"confidence\": 0.9 }" },
+              { text: `Eres un experto analista de inventarios. Analiza la imagen y devuelve ÚNICAMENTE un objeto JSON estricto, sin bloques de markdown, sin texto adicional.
+
+Instrucciones:
+1. Identifica el objeto principal y cualquier accesorio visible (cables, adaptadores, bases, manuales, etc.).
+2. Lee etiquetas y textos si es posible (ej. "12V 1.5A" en un cargador, marcas, modelos).
+3. Si intuyes que al objeto le falta un accesorio crítico que no se ve en la foto (ej. un módem sin cable de corriente), añádelo con isIncluded: false.
+
+Devuelve EXACTAMENTE esta estructura JSON:
+{
+  "name": "Nombre claro y específico del objeto principal",
+  "category": "Una de: Electrónica, Herramientas, Ropa, Documentos, Muebles, Cocina, Deportes, Juguetes, Otros",
+  "description": "Descripción breve del uso o características principales",
+  "tags": ["etiqueta1", "etiqueta2"],
+  "confidence": 0.9,
+  "technical_specs": "Especificaciones técnicas visibles (ej. WiFi 6 Dual Band, 12V 2A) o null si no aplica",
+  "condition": "Estado aparente: Buen estado / Desgastado / Requiere revisión / Desconocido",
+  "accessories": [
+    {
+      "name": "Nombre del accesorio",
+      "isIncluded": true,
+      "details": "Especificaciones si son visibles, si no pon null"
+    }
+  ]
+}` },
               { inline_data: { mime_type: mimeType, data: base64Data } }
             ]
           }],
-          generationConfig: { temperature: 0.1 }
+          generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
         }),
         signal: controller.signal
       });
@@ -184,19 +218,37 @@ class RobustAIService {
 
   private parseAIResponse(data: any): AIAnalysisResult {
     let parsed: Partial<AIAnalysisResult> = {};
-    if (data.name && data.category) parsed = data;
-    else if (data.text || data.response) parsed = this.extractFromText(data.text || data.response);
-    else if (typeof data === 'string') {
-      try { parsed = JSON.parse(data); } catch { parsed = this.extractFromText(data); }
+
+    if (typeof data === 'string') {
+      // Usa el parser a prueba de balas que limpia los backticks de markdown
+      try {
+        parsed = parseAIResponse<Partial<AIAnalysisResult>>(data);
+      } catch {
+        parsed = this.extractFromText(data);
+      }
+    } else if (data && typeof data === 'object') {
+      if (data.name && data.category) {
+        parsed = data;
+      } else if (data.text || data.response) {
+        try {
+          parsed = parseAIResponse<Partial<AIAnalysisResult>>(data.text || data.response);
+        } catch {
+          parsed = this.extractFromText(data.text || data.response);
+        }
+      }
     }
-    
+
     return {
       name: this.sanitizeString(parsed.name) || 'Objeto detectado',
       category: this.validateCategory(parsed.category),
       description: this.sanitizeString(parsed.description) || 'Descripción no disponible',
       tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
       confidence: Math.min(1, Math.max(0, parsed.confidence || 0.5)),
-      needsReview: false
+      needsReview: false,
+      // Campos nuevos — preservados si la IA los devuelve
+      accessories: Array.isArray(parsed.accessories) ? parsed.accessories : [],
+      technical_specs: parsed.technical_specs || undefined,
+      condition: parsed.condition || undefined,
     };
   }
 
@@ -225,7 +277,19 @@ class RobustAIService {
       description: (result.description || 'Sin descripción').slice(0, 500),
       tags: (result.tags || []).slice(0, 5),
       confidence: Math.min(1, Math.max(0, result.confidence || 0)),
-      needsReview: result.needsReview || result.confidence < 0.7
+      needsReview: result.needsReview || result.confidence < 0.7,
+      // Campos nuevos — limpiar y preservar
+      accessories: Array.isArray(result.accessories)
+        ? result.accessories.map(acc => ({
+            name: String(acc.name || '').trim(),
+            isIncluded: Boolean(acc.isIncluded),
+            details: acc.details ? String(acc.details).trim() : undefined,
+          }))
+        : [],
+      technical_specs: result.technical_specs
+        ? String(result.technical_specs).slice(0, 300)
+        : undefined,
+      condition: result.condition ? String(result.condition).slice(0, 100) : undefined,
     };
   }
 

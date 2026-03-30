@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { RobustScanner } from '@/components/inventory/RobustScanner';
 import { DataReview } from '@/components/inventory/DataReview';
 import { BoxDetail } from '@/components/inventory/BoxDetail';
-import { InventoryItem, Location, Box } from '@/core/types/inventory';
+import type { InventoryItem, Location, Box } from '@/core/types/inventory';
 import { Camera, MapPin, Package, Plus, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

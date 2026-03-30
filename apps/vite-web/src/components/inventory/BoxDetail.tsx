@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Box, InventoryItem } from '@/core/types/inventory';
+import type { Box, InventoryItem } from '@/core/types/inventory';
 import { QrCode, Package, MapPin, Edit, Trash2, Plus, Search, ChevronLeft } from 'lucide-react';
-import QRCode from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface BoxDetailProps {
   box: Box;
@@ -94,7 +94,7 @@ export function BoxDetail({
               <button onClick={() => setShowQR(false)} className="text-gray-500 hover:text-gray-900 cursor-pointer text-xl">✕</button>
             </div>
             <div className="flex justify-center border p-2 rounded bg-white">
-               <QRCode value={JSON.stringify({ id: box.id, name: box.name, type: 'box' })} size={200} />
+               <QRCodeCanvas value={JSON.stringify({ id: box.id, name: box.name, type: 'box' })} size={200} />
             </div>
             <p className="mt-4 text-xs text-gray-500">
               Escanea este código para ver el contenido de la caja

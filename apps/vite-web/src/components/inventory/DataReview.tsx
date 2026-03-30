@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { 
   CheckCircle, AlertCircle, RefreshCw, 
-  MapPin, Package, Tag, Calendar, DollarSign,
-  FileText, Camera, QrCode, ChevronRight,
-  Plus, Home, Briefcase, Wrench, Shirt, BookOpen
+  MapPin, Package, Calendar, DollarSign,
+  QrCode, ChevronRight,
+  Home, Briefcase, Wrench, Shirt, BookOpen,
+  CheckCircle2, XCircle, PlusCircle, Cpu, Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { suggestionService } from '@/core/services/suggestionService';
-import { Box, Location, InventoryItem, Suggestion } from '@/core/types/inventory';
-import QRCode from 'qrcode.react';
+import type { Box, Location, InventoryItem, Suggestion, Accessory } from '@/core/types/inventory';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface DataReviewProps {
   itemData: Partial<InventoryItem>;
@@ -46,11 +47,11 @@ export function DataReview({
       
       // Auto-seleccionar la mejor sugerencia (buscando coincidencia con los ids de DB)
       // Como el SuggestionService mockea nombres de localizaciones, podemos cruzar con la DB.
-      const bestLocation = suggested.find(s => s.type === 'location');
-      const bestBox = suggested.find(s => s.type === 'box');
+      const bestLocation = suggested.find((s: Suggestion) => s.type === 'location');
+      const bestBox = suggested.find((s: Suggestion) => s.type === 'box');
       
-      const realLocationMatch = locations.find(l => l.name.toLowerCase() === bestLocation?.name?.toLowerCase());
-      const realBoxMatch = boxes.find(b => b.name.toLowerCase() === bestBox?.name?.toLowerCase());
+      const realLocationMatch = locations.find((l: Location) => l.name.toLowerCase() === bestLocation?.name?.toLowerCase());
+      const realBoxMatch = boxes.find((b: Box) => b.name.toLowerCase() === bestBox?.name?.toLowerCase());
 
       if (realLocationMatch) setSelectedLocation(realLocationMatch.id);
       if (realBoxMatch) setSelectedBox(realBoxMatch.id);
@@ -62,6 +63,29 @@ export function DataReview({
   // Actualizar campos del item
   const updateField = (field: keyof InventoryItem, value: any) => {
     setEditedItem({ ...editedItem, [field]: value });
+  };
+
+  // ── Handlers de accesorios ────────────────────────────────────────────────
+  const toggleAccessoryIncluded = (index: number) => {
+    const updated = [...(editedItem.accessories || [])];
+    updated[index] = { ...updated[index], isIncluded: !updated[index].isIncluded };
+    updateField('accessories', updated);
+  };
+
+  const updateAccessory = (index: number, field: keyof Accessory, value: string | boolean) => {
+    const updated = [...(editedItem.accessories || [])];
+    updated[index] = { ...updated[index], [field]: value };
+    updateField('accessories', updated);
+  };
+
+  const addEmptyAccessory = () => {
+    const updated = [...(editedItem.accessories || []), { name: '', isIncluded: true, details: '' }];
+    updateField('accessories', updated);
+  };
+
+  const removeAccessory = (index: number) => {
+    const updated = (editedItem.accessories || []).filter((_: Accessory, i: number) => i !== index);
+    updateField('accessories', updated);
   };
   
   // Validar antes de guardar
@@ -160,7 +184,7 @@ export function DataReview({
             {showQR && editedItem.name && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                 <div className="bg-white p-6 rounded-xl text-center">
-                  <QRCode value={JSON.stringify({ id: 'temp', name: editedItem.name })} size={200} />
+                  <QRCodeCanvas value={JSON.stringify({ id: 'temp', name: editedItem.name })} size={200} />
                   <p className="mt-4 text-sm text-gray-600">QR para {editedItem.name}</p>
                   <button
                     onClick={() => setShowQR(false)}
@@ -241,7 +265,7 @@ export function DataReview({
                   Etiquetas
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {(editedItem.tags || []).map((tag, idx) => (
+                  {(editedItem.tags || []).map((tag: string, idx: number) => (
                     <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
                       {tag}
                     </span>
@@ -256,6 +280,115 @@ export function DataReview({
                     className="px-2 py-1 border border-dashed border-gray-300 rounded-full text-sm text-gray-500 hover:border-blue-500 cursor-pointer"
                   >
                     + Agregar
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Especificaciones Técnicas ── */}
+              {(editedItem.technical_specs !== undefined || editedItem.category === 'Electrónica' || editedItem.category === 'Herramientas') && (
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                    <Cpu className="w-4 h-4 text-indigo-500" />
+                    Especificaciones Técnicas
+                  </label>
+                  <input
+                    type="text"
+                    value={editedItem.technical_specs || ''}
+                    onChange={(e) => updateField('technical_specs', e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-sm"
+                    placeholder="Ej. WiFi 6 Dual Band, 12V 2A, USB-C..."
+                  />
+                </div>
+              )}
+
+              {/* ── Estado del objeto ── */}
+              {editedItem.condition !== undefined && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estado del objeto
+                  </label>
+                  <select
+                    value={editedItem.condition || ''}
+                    onChange={(e) => updateField('condition', e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+                  >
+                    <option value="Buen estado">✅ Buen estado</option>
+                    <option value="Desgastado">⚠️ Desgastado</option>
+                    <option value="Requiere revisión">🔧 Requiere revisión</option>
+                    <option value="Desconocido">❓ Desconocido</option>
+                  </select>
+                </div>
+              )}
+
+              {/* ── Accesorios y Componentes ── */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  Accesorios y Componentes
+                </label>
+
+                <div className="space-y-2">
+                  {(editedItem.accessories || []).length > 0 ? (
+                    (editedItem.accessories || []).map((acc: Accessory, index: number) => (
+                      <div
+                        key={index}
+                        className={`flex items-start gap-3 p-3 border rounded-xl transition-colors ${
+                          acc.isIncluded
+                            ? 'border-green-200 bg-green-50'
+                            : 'border-red-200 bg-red-50'
+                        }`}
+                      >
+                        {/* Toggle incluido / no incluido */}
+                        <button
+                          type="button"
+                          onClick={() => toggleAccessoryIncluded(index)}
+                          className="mt-0.5 shrink-0 cursor-pointer"
+                          title={acc.isIncluded ? 'Marcar como no incluido' : 'Marcar como incluido'}
+                        >
+                          {acc.isIncluded
+                            ? <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            : <XCircle className="w-5 h-5 text-red-400" />
+                          }
+                        </button>
+
+                        <div className="flex-1 min-w-0">
+                          <input
+                            className="font-medium text-sm w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none text-gray-800"
+                            value={acc.name}
+                            placeholder="Nombre del accesorio..."
+                            onChange={(e) => updateAccessory(index, 'name', e.target.value)}
+                          />
+                          <input
+                            className="text-xs text-gray-500 mt-1 w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none"
+                            value={acc.details || ''}
+                            placeholder="Detalles (ej. 12V 2A, 1 metro)..."
+                            onChange={(e) => updateAccessory(index, 'details', e.target.value)}
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeAccessory(index)}
+                          className="shrink-0 text-gray-300 hover:text-red-400 transition-colors cursor-pointer"
+                          title="Eliminar accesorio"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-400 italic py-2">
+                      La IA no detectó accesorios. Puedes agregarlos manualmente.
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={addEmptyAccessory}
+                    className="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors cursor-pointer mt-1"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    Agregar Accesorio
                   </button>
                 </div>
               </div>

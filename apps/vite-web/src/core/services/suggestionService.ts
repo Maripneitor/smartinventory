@@ -1,4 +1,4 @@
-import { InventoryItem, Location, Box, Suggestion } from '@/core/types/inventory';
+import type { InventoryItem, Location, Box, Suggestion } from '@/core/types/inventory';
 
 class SuggestionService {
   // Sugerir dónde guardar basado en el nombre del item

@@ -1,18 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌐 SmartInventory — Frontend Web (Next.js)
 
-## Getting Started
+Este es el cliente web de SmartInventory, construido con **Next.js 15+**, **Tailwind CSS 4.0** y **Framer Motion**.
 
-First, run the development server:
+## 🚀 Desarrollo Local
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1.  **Requisito**: Haber iniciado Supabase localmente en la raíz (`npx supabase start`).
+2.  **Configuración**: Asegúrate de tener el archivo `.env.local` con las credenciales de tu instancia local.
+3.  **Lanzamiento**:
+    ```bash
+    npm install
+    npm run dev
+    ```
+
+## 📐 Arquitectura
+Este frontend sigue un patrón **MVC**:
+-   **Views**: Componentes en `src/views` (Presentación pura).
+-   **Controllers**: Custom hooks en `src/controllers` (Lógica y Estado).
+-   **Models**: Clases en `src/models` (Comunicación segura con Supabase).
+
+## 🛠️ Comandos Útiles
+-   `npm run lint`: Ejecuta el linter para asegurar calidad de código.
+-   `npm run build`: Genera el bundle de producción.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

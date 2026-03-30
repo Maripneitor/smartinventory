@@ -1,314 +1,122 @@
-// supabase/functions/analyze-item/index.ts
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+// Importamos el servidor HTTP de Deno (estándar en Edge Functions)
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
+// Configuración de CORS para permitir que tu frontend en localhost se conecte
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function encodeBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+/**
+ * Parser de JSON a prueba de balas.
+ * Elimina bloques de markdown (```json ... ```) antes de parsear.
+ * Funciona sin importar cómo el modelo formatee su respuesta.
+ */
+function parseAIResponse(textResponse: string): unknown {
+  // Intento 1: JSON puro directo
+  try { return JSON.parse(textResponse); } catch { /* continúa */ }
+
+  // Intento 2: Extraer bloque ```json ... ``` o ``` ... ```
+  const fenceMatch = textResponse.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch?.[1]) {
+    try { return JSON.parse(fenceMatch[1].trim()); } catch { /* continúa */ }
   }
-  return btoa(binary);
+
+  // Intento 3 (más robusto): capturar el primer objeto/array JSON completo
+  const jsonMatch = textResponse.match(/[\{\[][\s\S]*[\}\]]/);
+  if (jsonMatch) {
+    try { return JSON.parse(jsonMatch[0]); } catch { /* continúa */ }
+  }
+
+  throw new Error(`No se encontró JSON válido en la respuesta de la IA. Preview: "${textResponse.slice(0, 200)}"`);
 }
 
-function isRetryableStatus(status: number) {
-  return status === 429 || (status >= 500 && status <= 599);
-}
+serve(async (req) => {
+  // Manejo de la petición OPTIONS (Preflight de CORS)
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
-/** Decide si vale la pena hacer fallback al otro proveedor */
-function shouldFallback(err: any) {
-  const msg = String(err?.message ?? err ?? "");
-  // auth / key inválida / permisos / cuota / rate limit / timeouts / server
-  return (
-    msg.includes("401") ||
-    msg.includes("403") ||
-    msg.includes("429") ||
-    msg.includes("quota") ||
-    msg.includes("rate") ||
-    msg.toLowerCase().includes("timeout") ||
-    msg.includes("5") || // cubre 5xx en mensaje
-    msg.toLowerCase().includes("parse") // JSON no parseable
-  );
-}
-
-async function fetchJsonWithTimeout(url: string, init: RequestInit, timeoutMs = 15000) {
-  const ac = new AbortController();
-  const id = setTimeout(() => ac.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { ...init, signal: ac.signal });
-    return res;
-  } finally {
-    clearTimeout(id);
-  }
-}
+    // 1. Extraemos la imagen enviada desde el frontend
+    const { image } = await req.json()
+    if (!image) throw new Error("No se proporcionó ninguna imagen")
 
-async function geminiVisionJson(params: {
-  apiKey: string;
-  model: string;
-  mimeType: string;
-  base64Data: string;
-}) {
-  const { apiKey, model, mimeType, base64Data } = params;
+    // 2. API Key desde las variables de entorno del servidor
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('VITE_GEMINI_API_KEY')
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY no configurada en el entorno del servidor.")
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-  const prompt = `
-Analiza esta imagen de un objeto doméstico.
-Devuélveme SOLO un JSON válido con:
-nombre_corto, categoria, descripcion, color, tags (3-8), posible_dispositivo.
-Si no estás seguro: usa null. No inventes marcas/modelos.
-`.trim();
+    const base64Data = image.includes(',') ? image.split(',')[1] : image;
+    const mimeType = image.includes(';') ? image.split(';')[0].split(':')[1] : "image/jpeg";
 
-  const body = {
-    contents: [
-      {
+    // 3. Prompt actualizado — solicita accesorios, specs técnicas y estado
+    const geminiPrompt = `Eres un experto analista de inventarios. Analiza la imagen y devuelve ÚNICAMENTE un objeto JSON estricto, sin bloques de markdown, sin texto adicional.
+
+Instrucciones:
+1. Identifica el objeto principal y cualquier accesorio visible (cables, adaptadores, bases, manuales, etc.).
+2. Lee etiquetas y textos si es posible (ej. "12V 1.5A" en un cargador, marcas, modelos).
+3. Si intuyes que al objeto le falta un accesorio crítico que no se ve en la foto (ej. un módem sin cable de corriente), añádelo con isIncluded: false.
+
+Devuelve EXACTAMENTE esta estructura JSON:
+{
+  "name": "Nombre claro y específico del objeto principal",
+  "category": "Una de: Electrónica, Herramientas, Ropa, Documentos, Muebles, Cocina, Deportes, Juguetes, Otros",
+  "description": "Descripción breve del uso o características principales",
+  "tags": ["etiqueta1", "etiqueta2"],
+  "confidence": 0.9,
+  "technical_specs": "Especificaciones técnicas visibles (ej. WiFi 6 Dual Band, 12V 2A) o null si no aplica",
+  "condition": "Estado aparente: Buen estado / Desgastado / Requiere revisión / Desconocido",
+  "accessories": [
+    {
+      "name": "Nombre del accesorio",
+      "isIncluded": true,
+      "details": "Especificaciones si son visibles, si no pon null"
+    }
+  ]
+}`;
+
+    const geminiPayload = {
+      contents: [{
         parts: [
-          { text: prompt },
-          { inline_data: { mime_type: mimeType, data: base64Data } },
-        ],
-      },
-    ],
-    generationConfig: {
-      response_mime_type: "application/json",
-      temperature: 0.2,
-      max_output_tokens: 512,
-    },
-  };
-
-  let lastErr: any = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const res = await fetchJsonWithTimeout(
-      url,
-      {
-        method: "POST",
-        headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-      15000
-    );
-
-    if (res.ok) {
-      const data = await res.json();
-      const text =
-        data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-        data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text).join("") ??
-        "";
-      try {
-        return JSON.parse(text);
-      } catch {
-        const m = String(text).match(/\{[\s\S]*\}/);
-        if (m) return JSON.parse(m[0]);
-        throw new Error("Gemini parse error: JSON no válido");
+          { text: geminiPrompt },
+          { inline_data: { mime_type: mimeType, data: base64Data } } 
+        ]
+      }],
+      generationConfig: { 
+        temperature: 0.1,
+        responseMimeType: "application/json"
       }
-    }
+    };
 
-    const errText = await res.text().catch(() => "");
-    lastErr = new Error(`Gemini error ${res.status}: ${errText}`);
-
-    if (!isRetryableStatus(res.status)) break;
-    await sleep(250 * Math.pow(2, attempt - 1));
-  }
-
-  throw lastErr ?? new Error("Gemini failed");
-}
-
-async function groqVisionJson(params: {
-  apiKey: string;
-  model: string;
-  mimeType: string;
-  base64Data: string;
-}) {
-  const { apiKey, model, mimeType, base64Data } = params;
-
-  const url = "https://api.groq.com/openai/v1/chat/completions";
-  const prompt = `
-Analiza esta imagen de un objeto doméstico.
-Devuélveme SOLO un JSON válido con:
-nombre_corto, categoria, descripcion, color, tags (3-8), posible_dispositivo.
-Si no estás seguro: usa null. No inventes marcas/modelos.
-`.trim();
-
-  const body = {
-    model,
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: prompt },
-          {
-            type: "image_url",
-            image_url: { url: `data:${mimeType};base64,${base64Data}` },
-          },
-        ],
-      },
-    ],
-    response_format: { type: "json_object" },
-    temperature: 0.2,
-    max_completion_tokens: 512,
-  };
-
-  let lastErr: any = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const res = await fetchJsonWithTimeout(
-      url,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-      15000
-    );
-
-    if (res.ok) {
-      const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content ?? "";
-      try {
-        return JSON.parse(text);
-      } catch {
-        const m = String(text).match(/\{[\s\S]*\}/);
-        if (m) return JSON.parse(m[0]);
-        throw new Error("Groq parse error: JSON no válido");
-      }
-    }
-
-    const errText = await res.text().catch(() => "");
-    lastErr = new Error(`Groq error ${res.status}: ${errText}`);
-
-    if (!isRetryableStatus(res.status)) break;
-    await sleep(250 * Math.pow(2, attempt - 1));
-  }
-
-  throw lastErr ?? new Error("Groq failed");
-}
-
-export default async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
-
-  try {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
-    const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.0-flash";
-
-    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY") ?? "";
-    const GROQ_VISION_MODEL =
-      Deno.env.get("GROQ_VISION_MODEL") ?? "llama-3.2-11b-vision-preview";
-
-    const primary = (Deno.env.get("AI_PROVIDER_PRIMARY") ?? "gemini").toLowerCase();
-    const fallback = (Deno.env.get("AI_PROVIDER_FALLBACK") ?? "groq").toLowerCase();
-
-    const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Missing Authorization Bearer token" }), {
-        status: 401,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(geminiPayload)
     });
 
-    const { data: userRes, error: userErr } = await supabase.auth.getUser();
-    let user = userRes?.user;
-
-    // Bypass de desarrollo: Si no hay usuario pero el bypass está activo
-    if (!user && Deno.env.get("DEV_AUTH_BYPASS") === "true") {
-      user = {
-        id: "4cef6da7-62a7-4855-80a6-27583e387a05",
-        email: "mariomoguel05@gmail.com"
-      } as any;
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`Gemini API Error: ${err}`);
     }
 
-    if (!user) {
-      return new Response(JSON.stringify({ error: "Invalid session" }), {
-        status: 401,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
-    }
+    const aiResult = await response.json();
+    
+    // 4. Parsear con el extractor a prueba de balas (maneja ```json``` y texto extra)
+    const textResult = aiResult.candidates[0].content.parts[0].text;
+    const parsedData = parseAIResponse(textResult);
 
-    const { photo_path, mime_type } = await req.json().catch(() => ({}));
-    if (!photo_path || typeof photo_path !== "string") {
-      return new Response(JSON.stringify({ error: "photo_path requerido" }), {
-        status: 400,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
-    }
-    if (!photo_path.startsWith(`${user.id}/`)) {
-      return new Response(JSON.stringify({ error: "Forbidden photo_path" }), {
-        status: 403,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
-    }
+    // 5. Devolvemos los datos al frontend
+    return new Response(
+      JSON.stringify(parsedData),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
-    const { data: blob, error: dlErr } = await supabase.storage
-      .from("item-photos")
-      .download(photo_path);
-
-    if (dlErr || !blob) {
-      return new Response(JSON.stringify({ error: "No se pudo descargar la imagen" }), {
-        status: 400,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
-    }
-
-    const bytes = new Uint8Array(await blob.arrayBuffer());
-    const base64Data = encodeBase64(bytes);
-    const mimeType = (typeof mime_type === "string" && mime_type) ? mime_type : "image/jpeg";
-
-    // --- Failover strategy ---
-    const providers = [primary, fallback].filter(Boolean);
-    let lastError: any = null;
-
-    for (let i = 0; i < providers.length; i++) {
-      const p = providers[i];
-      try {
-        let json;
-        if (p === "gemini") {
-          if (!GEMINI_API_KEY) throw new Error("Gemini error 401: Missing GEMINI_API_KEY");
-          json = await geminiVisionJson({
-            apiKey: GEMINI_API_KEY,
-            model: GEMINI_MODEL,
-            mimeType,
-            base64Data,
-          });
-        } else if (p === "groq") {
-          if (!GROQ_API_KEY) throw new Error("Groq error 401: Missing GROQ_API_KEY");
-          json = await groqVisionJson({
-            apiKey: GROQ_API_KEY,
-            model: GROQ_VISION_MODEL,
-            mimeType,
-            base64Data,
-          });
-        } else {
-          throw new Error(`Unknown AI provider: ${p}`);
-        }
-        return new Response(JSON.stringify(json), {
-          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-        });
-      } catch (e: any) {
-        lastError = e;
-        if (!shouldFallback(e)) break;
-      }
-    }
-
-    return new Response(JSON.stringify({ error: lastError?.message ?? "IA failed" }), {
-      status: 502,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e?.message ?? "Unknown error" }), {
-      status: 500,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    });
+  } catch (error) {
+    console.error('[AnalyzeItem Error]:', error.message);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+    )
   }
-});
+})
+

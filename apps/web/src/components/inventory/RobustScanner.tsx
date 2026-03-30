@@ -7,12 +7,13 @@ import { toast } from 'sonner';
 
 interface ScannerProps {
   onItemAdded?: () => void;
+  onScanSuccess?: (draft: any) => void; // New callback for the Staff Engineer flow
   onClose?: () => void;
 }
 
 type Step = 'capture' | 'analyzing' | 'review' | 'saving' | 'complete';
 
-export function RobustScanner({ onItemAdded, onClose }: ScannerProps) {
+export function RobustScanner({ onItemAdded, onScanSuccess, onClose }: ScannerProps) {
   const [step, setStep] = useState<Step>('capture');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -105,6 +106,20 @@ export function RobustScanner({ onItemAdded, onClose }: ScannerProps) {
   };
 
   const saveItem = async (result: any) => {
+    // If the Staff Engineer flow is active, we delegate the assignment
+    if (onScanSuccess) {
+      onScanSuccess({
+        name: result.name,
+        category: result.category || 'Otros',
+        confidence: result.confidence || 0.9,
+        description: result.description || '',
+        tags: result.tags || []
+      });
+      setStep('complete');
+      setTimeout(() => { onClose?.(); }, 1000);
+      return;
+    }
+
     setStep('saving');
     try {
       const { itemsService } = await import('@/core/items');
@@ -112,10 +127,8 @@ export function RobustScanner({ onItemAdded, onClose }: ScannerProps) {
       let containerId: string | undefined = undefined;
       
       // Intentar sugerencia automática
-      if (result.category) {
-         const suggestion = await itemsService.getSuggestionByCategory(result.category);
-         if (suggestion?.container_id) containerId = suggestion.container_id;
-      }
+      const suggestion = await itemsService.getSuggestionByCategory(result.category);
+      if (suggestion?.container_id) containerId = suggestion.container_id;
       
       // Fallback a cualquier caja
       if (!containerId) {
@@ -145,7 +158,7 @@ export function RobustScanner({ onItemAdded, onClose }: ScannerProps) {
          ai_metadata: result
       });
       
-      toast.success('¡Item agregado en ' + (result.category || 'General') + '!', { description: result.name });
+      toast.success('¡Item agregado!', { description: result.name });
       setStep('complete');
       setTimeout(() => { onItemAdded?.(); onClose?.(); }, 1500);
     } catch (err: any) {
