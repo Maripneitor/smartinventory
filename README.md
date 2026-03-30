@@ -7,6 +7,7 @@
 ## 📋 Requisitos del Sistema
 
 ### 1. Requisitos Funcionales (Lo que la app HACE)
+
 - **🧠 Análisis de Objetos con IA**: Identificación automática de nombres, categorías, etiquetas y descripciones a partir de una sola foto.
 - **🔌 Detección de Accesorios (Nuevo)**: La IA identifica cables, transformadores, bases y manuales, indicando si están incluidos o faltantes en el kit.
 - **⚙️ Especificaciones Técnicas**: Extracción y almacenamiento de detalles como voltajes (12V 2A), modelos de WiFi, marcas y estado físico.
@@ -17,6 +18,7 @@
 - **📥 Importación/Exportación**: Respaldo de datos en formato CSV para análisis externo.
 
 ### 2. Requisitos No Funcionales (CÓMO lo hace)
+
 - **🎨 Experiencia de Usuario Premium**: Interfaz moderna con estética dark-mode, glassmorphism y micro-animaciones fluidas (Framer Motion).
 - **🚀 Rendimiento Optimizado**: Compresión proactiva de imágenes en el cliente (max 800px) para subidas instantáneas y ahorro de ancho de banda.
 - **🛡️ Seguridad por Diseño**: Arquitectura desacoplada donde las API Keys de IA viven exclusivamente en el servidor (Supabase Edge Functions).
@@ -30,24 +32,31 @@
 ## 🖼️ Vistas del Sistema
 
 ### 1. Dashboard (Panel Principal)
+
 El centro de mando. Muestra contadores clave, accesos rápidos al scanner y una lista de los últimos objetos indexados con un diseño limpio y profesional.
 
 ### 2. Robust AI Scanner
+
 Cámara integrada que guía al usuario. Incluye detección de errores de red, feedback visual de análisis y un "cerebro trabajando" animado mientras procesa la imagen.
 
 ### 3. Data Review & Edit (Revisión de Datos)
+
 Formulario avanzado donde el usuario confirma lo que la IA detectó.
+
 - **Panel de Accesorios**: Lista dinámica con iconos ✅/❌ para cables y bases.
 - **Panel de Specs**: Campo para detalles técnicos y estado (Buen estado, Desgastado, etc.).
 - **Selector Inteligente**: Sugiere automáticamente en qué caja y ubicación guardar el objeto según su categoría.
 
 ### 4. Búsqueda Semántica (Magic Search)
+
 Interfaz minimalista que permite alternar entre búsqueda "IA Híbrida" (conceptos) y "Búsqueda Clásica" (palabras exactas).
 
 ### 5. Mapa de Ubicaciones
+
 Vista jerárquica para gestionar habitaciones y estantes. Permite ver qué cajas están en cada lugar de un vistazo.
 
 ### 6. Configuración & Herramientas
+
 Gestión de perfil, estado de sincronización y utilidades como el generador de etiquetas masivo.
 
 ---
@@ -65,6 +74,7 @@ Gestión de perfil, estado de sincronización y utilidades como el generador de 
 ## 🚀 Guía de Inicio Rápido
 
 ### Comandos de Desarrollo
+
 ```bash
 # Iniciar servicios de Supabase (Docker)
 npx supabase start
