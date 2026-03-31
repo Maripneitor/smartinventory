@@ -29,11 +29,14 @@
 
 @layer base {
   :root {
-    --background: #ffffff;
-    --foreground: #09090b;
-    --card: #f4f4f5;
-    --card-foreground: #09090b;
-    --border: rgba(0, 0, 0, 0.1);
+    --background: #f0f9ff; /* sky-50 - Celeste muy claro */
+    --foreground: #0f172a; /* slate-900 - Texto casi negro */
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --border: rgba(14, 165, 233, 0.1); /* sky-500 con transparencia */
+    --primary: #0ea5e9; /* sky-500 */
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
   }
 
   .dark {
@@ -44,6 +47,7 @@
     /* zinc-900 */
     --card-foreground: #fafafa;
     --border: rgba(255, 255, 255, 0.1);
+    --primary: #3b82f6;
   }
 
   body {
@@ -78,7 +82,7 @@
 }
 
 @utility skeleton {
-  @apply relative overflow-hidden bg-zinc-900 rounded-xl before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-linear-to-r before:from-transparent before:via-white/5 before:to-transparent;
+  @apply relative overflow-hidden bg-sky-100 rounded-xl before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-linear-to-r before:from-transparent before:via-white/20 before:to-transparent;
 }
 
 @keyframes shimmer {
@@ -89,15 +93,15 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20 active:shadow-none;
+    @apply bg-sky-600 hover:bg-sky-500 text-white font-semibold py-3 px-6 rounded-xl transition-all active:scale-95 shadow-lg shadow-sky-500/20 active:shadow-none;
   }
 
   .input-modern {
-    @apply h-12 w-full rounded-xl border border-white/5 bg-zinc-900 px-4 text-white focus:border-blue-500 focus:outline-none transition-all placeholder:text-zinc-700;
+    @apply h-12 w-full rounded-xl border border-sky-200 bg-white px-4 text-slate-900 focus:border-sky-500 focus:outline-none transition-all placeholder:text-slate-400 dark:bg-zinc-900 dark:border-white/5 dark:text-white;
   }
 
   .nav-item {
-    @apply flex flex-col items-center justify-center gap-1 text-zinc-500 transition-colors hover:text-white active:scale-90;
+    @apply flex flex-col items-center justify-center gap-1 text-slate-400 transition-colors hover:text-sky-600 active:scale-90 dark:text-zinc-500 dark:hover:text-white;
   }
 
   .nav-item-active {

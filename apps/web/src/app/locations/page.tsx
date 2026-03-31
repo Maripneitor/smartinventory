@@ -55,26 +55,26 @@ export default function LocationsPage() {
     return (
         <div className="flex flex-col gap-10 max-w-[60rem] mx-auto pb-40">
             <header className="flex flex-col gap-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-emerald-500/10 border border-emerald-500/20 mb-2">
-                    <MapPin className="h-6 w-6 text-emerald-500" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-sky-500/10 border border-sky-500/20 mb-2">
+                    <MapPin className="h-6 w-6 text-sky-600" />
                 </div>
-                <h1 className="font-display text-4xl font-black tracking-tight text-white">Ubicaciones</h1>
-                <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">Jerarquía Visual de tu Almacén</p>
+                <h1 className="font-display text-4xl font-black tracking-tight text-slate-900">Ubicaciones</h1>
+                <p className="text-sm font-bold uppercase tracking-widest text-slate-400">Jerarquía Visual de tu Almacén</p>
             </header>
 
             {/* Formulario */}
-            <Card variant="secondary" className="border-blue-500/10">
+            <Card variant="secondary" className="border-sky-100 bg-white">
                 <form onSubmit={handleCreate} className="flex flex-col gap-8">
                     <div className="flex flex-col gap-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Crear Nueva Ubicación</label>
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Crear Nueva Ubicación</label>
                         <div className="flex gap-3">
                             <Input
                                 value={newName}
                                 onChange={e => setNewName(e.target.value)}
                                 placeholder="Ej. Habitación Principal, Estante A..."
-                                className="flex-1 h-14 bg-zinc-950/50 rounded-2xl"
+                                className="flex-1 h-14 bg-sky-50 rounded-2xl border-sky-100 text-slate-900"
                             />
-                            <Button type="submit" className="h-14 px-8 rounded-2xl">
+                            <Button type="submit" className="h-14 px-8 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white shadow-xl shadow-sky-600/20 transition-all outline-none border-none">
                                 <Plus className="h-5 w-5 mr-2" /> Agregar
                             </Button>
                         </div>
@@ -82,19 +82,19 @@ export default function LocationsPage() {
 
                     {locations.length > 0 && (
                         <div className="flex flex-col gap-3">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Jerarquía / Nivel Superior</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Jerarquía / Nivel Superior</label>
                             <div className="relative">
                                 <select
                                     value={selectedParentId || ""}
                                     onChange={e => setSelectedParentId(e.target.value || null)}
-                                    className="w-full rounded-2xl bg-zinc-950/50 border border-white/5 px-4 h-14 text-white font-bold focus:border-blue-500 focus:outline-none transition-all appearance-none"
+                                    className="w-full rounded-2xl bg-sky-50 border border-sky-100 px-4 h-14 text-slate-900 font-bold focus:border-sky-500 focus:outline-none transition-all appearance-none outline-none"
                                 >
-                                    <option value="" className="bg-zinc-900 border-none">Sin Padre (Nivel Raíz)</option>
+                                    <option value="" className="bg-white border-none">Sin Padre (Nivel Raíz)</option>
                                     {locations.map(l => (
-                                        <option key={l.id} value={l.id} className="bg-zinc-900">{l.name}</option>
+                                        <option key={l.id} value={l.id} className="bg-white">{l.name}</option>
                                     ))}
                                 </select>
-                                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600 pointer-events-none rotate-90" />
+                                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none rotate-90" />
                             </div>
                         </div>
                     )}
@@ -103,15 +103,15 @@ export default function LocationsPage() {
 
             {/* Árbol Visual */}
             <div className="flex flex-col gap-3">
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 px-4">Mapa Estructural</h2>
-                <div className="flex flex-col gap-1 p-2 bg-zinc-950 rounded-[2rem] border border-white/5">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-4">Mapa Estructural</h2>
+                <div className="flex flex-col gap-1 p-2 bg-white rounded-[2rem] border border-sky-100 shadow-sm">
                     {tree.map(node => (
                         <LocationNode key={node.id} node={node} />
                     ))}
                     {tree.length === 0 && (
                         <div className="py-20 text-center flex flex-col items-center gap-4">
-                            <MapPin className="h-10 w-10 text-zinc-800 opacity-20" />
-                            <p className="text-zinc-600 italic font-medium">No has creado ubicaciones todavía.</p>
+                            <MapPin className="h-10 w-10 text-sky-200 opacity-50" />
+                            <p className="text-slate-400 italic font-medium">No has creado ubicaciones todavía.</p>
                         </div>
                     )}
                 </div>
@@ -125,24 +125,24 @@ function LocationNode({ node, depth = 0 }: { node: LocationTreeNode, depth?: num
         <div className="flex flex-col">
             <div
                 className={cn(
-                    "flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 transition-all group cursor-pointer",
+                    "flex items-center gap-4 p-4 rounded-2xl hover:bg-sky-50 transition-all group cursor-pointer",
                     depth > 0 && "ml-8 relative"
                 )}
             >
                 {depth > 0 && (
-                    <div className="absolute left-[-20px] top-1/2 w-4 h-px bg-white/10" />
+                    <div className="absolute left-[-20px] top-1/2 w-4 h-px bg-sky-100" />
                 )}
 
                 <div className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-lg border",
                     depth === 0
-                        ? "bg-blue-600/10 border-blue-500/20 text-blue-500"
-                        : "bg-zinc-900 border-white/5 text-zinc-600"
+                        ? "bg-sky-100 border-sky-200 text-sky-600"
+                        : "bg-sky-50 border-sky-100 text-slate-400"
                 )}>
                     <MapPin className="h-4 w-4" />
                 </div>
 
-                <Link href={`/containers?location=${node.id}`} className="flex-1 font-bold text-zinc-100 group-hover:text-blue-500 transition-colors">
+                <Link href={`/containers?location=${node.id}`} className="flex-1 font-bold text-slate-900 group-hover:text-sky-600 transition-colors">
                     {node.name}
                 </Link>
 

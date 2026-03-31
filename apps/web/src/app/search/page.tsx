@@ -71,23 +71,23 @@ export default function SearchPage() {
     return (
         <div className="flex flex-col gap-8 pb-20">
             {/* Header */}
-            <div className="flex items-center gap-4 sticky top-0 z-20 bg-background/80 backdrop-blur-xl py-4 -mx-4 px-4 border-b border-white/5">
+            <div className="flex items-center gap-4 sticky top-0 z-20 bg-background/80 backdrop-blur-xl py-4 -mx-4 px-4 border-b border-sky-100">
                 <Link
                     href="/"
-                    className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-400 active:scale-95 transition-all hover:bg-zinc-800 border border-white/5"
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 active:scale-95 transition-all hover:bg-sky-50 border border-sky-100"
                     aria-label="Volver"
                 >
                     <ChevronLeft className="h-6 w-6" />
                 </Link>
 
                 <form onSubmit={handleSearch} className="relative flex-1" role="search">
-                    <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors" />
+                    <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-600 transition-colors" />
                     <Input
                         id="search-input"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="¿Qué estás buscando? (ej: cables de video)"
-                        className="pl-12 pr-12 h-14 bg-zinc-950/50 rounded-[1.5rem]"
+                        className="pl-12 pr-12 h-14 bg-white rounded-[1.5rem] border-sky-100 text-slate-900 placeholder:text-slate-400 focus:border-sky-500 shadow-sm"
                         autoFocus
                         aria-label="Campo de búsqueda"
                     />
@@ -110,20 +110,20 @@ export default function SearchPage() {
             {/* Mode Toggle */}
             <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Motor de Búsqueda</h2>
-                    <span className="text-[10px] font-bold text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded-md border border-white/5">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Motor de Búsqueda</h2>
+                    <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100">
                         {mode === "hybrid" ? "IA + Palabras Clave" : "Coincidencia Exacta"}
                     </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 p-1 bg-zinc-950 rounded-[1.5rem] border border-white/5">
+                <div className="grid grid-cols-2 gap-3 p-1 bg-white rounded-[1.5rem] border border-sky-100 shadow-sm">
                     <button
                         onClick={() => setMode("hybrid")}
                         className={cn(
                             "flex items-center justify-center gap-2 rounded-[1.25rem] py-3 text-[11px] font-black uppercase tracking-widest transition-all",
                             mode === "hybrid"
-                                ? "bg-blue-600 text-white shadow-xl shadow-blue-500/20"
-                                : "text-zinc-500 hover:text-zinc-300"
+                                ? "bg-sky-600 text-white shadow-lg shadow-sky-500/20"
+                                : "text-slate-400 hover:text-sky-600"
                         )}
                     >
                         <Sparkles className="h-3.5 w-3.5" /> Híbrida (IA)
@@ -133,8 +133,8 @@ export default function SearchPage() {
                         className={cn(
                             "flex items-center justify-center gap-2 rounded-[1.25rem] py-3 text-[11px] font-black uppercase tracking-widest transition-all",
                             mode === "text"
-                                ? "bg-zinc-800 text-white border border-white/10 shadow-xl"
-                                : "text-zinc-500 hover:text-zinc-300"
+                                ? "bg-sky-100 text-sky-700 border border-sky-200 shadow-sm"
+                                : "text-slate-400 hover:text-sky-600"
                         )}
                     >
                         <Zap className="h-3.5 w-3.5" /> Clásica
@@ -186,14 +186,14 @@ export default function SearchPage() {
 
                 {!isPending && query && results.length === 0 && (
                     <div className="py-20 text-center flex flex-col items-center gap-4">
-                        <div className="h-20 w-20 rounded-full bg-zinc-950 flex items-center justify-center border border-white/5">
-                            <SearchIcon className="h-8 w-8 text-zinc-800" />
+                        <div className="h-20 w-20 rounded-full bg-sky-50 flex items-center justify-center border border-sky-100">
+                            <SearchIcon className="h-8 w-8 text-sky-200" />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <p className="text-zinc-500 text-sm font-medium">
+                            <p className="text-slate-500 text-sm font-medium">
                                 No encontramos nada que coincida con &quot;{query}&quot;
                             </p>
-                            <p className="text-zinc-700 text-xs">
+                            <p className="text-slate-400 text-xs">
                                 Intenta con términos más generales.
                             </p>
                         </div>
