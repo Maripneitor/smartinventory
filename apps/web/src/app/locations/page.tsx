@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
 
 export default function LocationsPage() {
     const [locations, setLocations] = useState<InventoryLocation[]>([]);
@@ -43,8 +44,13 @@ export default function LocationsPage() {
             setNewName("");
             setSelectedParentId(null);
             loadLocations();
-        } catch (e) {
+        } catch (e: any) {
             console.error("Error al crear ubicación", e);
+            if (e.code === '23505' || (e.message && e.message.includes('Conflict'))) {
+                toast.error("Ya existe una ubicación con ese nombre en este nivel.");
+            } else {
+                toast.error("Error al crear la ubicación. Inténtalo de nuevo.");
+            }
         }
     };
 

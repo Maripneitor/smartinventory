@@ -13,10 +13,16 @@ create table if not exists public.devices (
   photo_path text null,
   
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  
-  constraint devices_id_user_unique unique (id, user_id)
+  updated_at timestamptz not null default now()
 );
+
+-- Ensure the unique constraint exists for the FK below
+do $$ 
+begin
+    if not exists (select 1 from pg_constraint where conname = 'devices_id_user_unique') then
+        alter table public.devices add constraint devices_id_user_unique unique (id, user_id);
+    end if;
+end $$;
 
 -- Add device_id to items
 alter table public.items 

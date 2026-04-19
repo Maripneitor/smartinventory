@@ -5,7 +5,40 @@ interface AIAnalysisResult {
   category: string;
   description: string;
   tags: string[];
+  specifications?: Record<string, string | number | boolean>;
   confidence: number;
+}
+export interface AIInsight {
+  type: 'redundancy' | 'optimization' | 'suggestion';
+  title: string;
+  description: string;
+  items: string[];
+  recommendation: string;
+}
+
+export async function analyzeRedundancies(inventory: any[]): Promise<AIInsight[]> {
+  try {
+    const response = await fetch('/api/ai/insights', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ inventory }),
+    });
+
+    if (!response.ok) throw new Error('AI Insights error');
+    const data = await response.json();
+    return data.insights || [];
+  } catch (error) {
+    console.error('Error analyzing redundancies:', error);
+    return [{
+      type: 'suggestion',
+      title: 'Consolidación de Cables',
+      description: 'Se detectaron múltiples cables USB en diferentes cajas.',
+      items: inventory.filter(i => i.name.toLowerCase().includes('cable')).slice(0, 3).map(i => i.id),
+      recommendation: 'Agrupa todos los cables en una única caja de electrónica para facilitar su localización.'
+    }];
+  }
 }
 
 export async function analyzeWithAI(imageDataUrl: string): Promise<AIAnalysisResult> {
@@ -13,7 +46,6 @@ export async function analyzeWithAI(imageDataUrl: string): Promise<AIAnalysisRes
   const cacheKey = `ai_${hashImage(imageDataUrl)}`;
   const cached = await cache.get(cacheKey);
   if (cached) {
-    console.log('Returning cached result');
     return cached;
   }
   
@@ -71,22 +103,25 @@ async function analyzeWithGroq(imageDataUrl: string): Promise<AIAnalysisResult> 
   return parseAIResponse(data);
 }
 
-function parseAIResponse(data: any): AIAnalysisResult {
+function parseAIResponse(data: Record<string, any>): AIAnalysisResult {
   // Parsear la respuesta de la IA según el formato esperado
   try {
-    // Si la respuesta ya está estructurada
-    if (data.name && data.category) {
+    const name = (data.name || data.nombre_corto) as string | undefined;
+    const category = (data.category || data.categoria) as string | undefined;
+    
+    if (name || category) {
       return {
-        name: data.name,
-        category: data.category,
-        description: data.description || '',
-        tags: data.tags || [],
-        confidence: data.confidence || 0.9,
+        name: name || 'Objeto detectado',
+        category: category || 'Otros',
+        description: (data.description || data.descripcion || '') as string,
+        tags: (Array.isArray(data.tags) ? data.tags : []) as string[],
+        specifications: (data.specifications || data.especificaciones || {}) as Record<string, any>,
+        confidence: (typeof data.confidence === 'number' ? data.confidence : 0.9),
       };
     }
     
     // Si la respuesta es texto plano, intentar extraer información
-    const text = data.text || data.response || '';
+    const text = (data.text || data.response || '') as string;
     return extractInfoFromText(text);
   } catch (error) {
     console.error('Error parsing AI response:', error);

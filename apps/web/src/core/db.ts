@@ -1,12 +1,14 @@
 import Dexie, { type Table } from "dexie";
 import { type Item } from "@/entities/item/schema";
 import { type Container } from "@/entities/container/schema";
+import { type Location } from "./locations";
+import { z } from "zod";
 
 export interface SyncAction {
     id?: number;
     action: "create" | "update" | "delete";
     type: "item" | "container";
-    data: any;
+    data: Record<string, unknown>;
     timestamp: number;
 }
 
@@ -19,7 +21,7 @@ export interface OfflineImage {
 export class SmartInventoryDB extends Dexie {
     containers!: Table<Container>;
     items!: Table<Item>;
-    locations!: Table<any>; // Using any for simplicity here or import Location
+    locations!: Table<Location>;
     sync_queue!: Table<SyncAction>;
     images!: Table<OfflineImage>;
 

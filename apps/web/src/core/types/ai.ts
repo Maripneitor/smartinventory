@@ -1,15 +1,10 @@
 export interface AIAnalysisResult {
   name: string;
   category: string;
-  confidence: number;
-  suggestedTags: string[];
   description: string;
-}
-
-export interface AIModelResponse {
-  name?: string;
-  category?: string;
-  confidence?: number;
-  suggestedTags?: string[];
-  description?: string;
+  tags: string[];
+  specifications?: Record<string, any>;
+  confidence: number;
+  needsReview: boolean;
+  alternativeNames?: string[];
 }

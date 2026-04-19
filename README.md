@@ -1,80 +1,85 @@
-# 🧠 SmartInventory — Inventario Inteligente de Vanguardia
+# 🧠 SmartInventory — Ecosistema de Inventario Inteligente
 
-**SmartInventory** es un ecosistema de gestión de inventarios impulsado por Inteligencia Artificial diseñado para eliminar el caos en el almacenamiento físico. Utiliza visión por computadora (Gemini/Groq) y búsqueda semántica (pgvector) para que organizar y encontrar objetos sea tan fácil como hablar con un asistente.
-
----
-
-## ✨ Características Mágicas
-
-- **🧠 Análisis con IA (Gemini/Groq)**: Sube una foto de un objeto y la IA rellenará automáticamente el nombre, categoría, descripción y etiquetas.
-- **⚡ Caché de IA**: Los resultados del análisis se guardan localmente para ahorrar API calls y dinero.
-- **🖼️ Compresión Proactica**: Las fotos se comprimen en el cliente antes de subir, ahorrando datos y tiempo.
-- **🛡️ Cerebro Híbrido**: Sistema de failover automático entre Gemini y Groq.
-- **🔍 Búsqueda Semántica Optimizada**: Búsqueda vectorial ultra-rápida usando índices **HNSW** en Postgres.
-- **🖨️ Etiquetas Profesionales (Zebra & Avery)**: Genera etiquetas individuales o hojas completas para etiquetas Avery (5160, 5163).
-- **📱 PWA & Offline**: Instala la app y consulta tu inventario incluso sin conexión.
-- **🔗 Ecosistema de Dispositivos**: Vincula accesorios a sus equipos principales (ej: "Laptops", "Consolas").
+**SmartInventory** es una plataforma de gestión logística doméstica de vanguardia impulsada por Inteligencia Artificial. Diseñada para eliminar el caos en el almacenamiento físico mediante visión por computadora, búsqueda semántica y un flujo de usuario ultra-fluido.
 
 ---
 
-## 🚀 Guía de Inicio Rápido
+## 🚀 Guía de Instalación Rápida
 
-### 1. Requisitos
+Sigue estos pasos para poner en marcha tu entorno de desarrollo local:
 
-- [Node.js](https://nodejs.org/) (versión 18+)
-- [Supabase CLI](https://supabase.com/docs/guides/cli)
-- Cuenta en [Supabase Cloud](https://supabase.com/)
+### 1. Requisitos Previos
+*   **Node.js v18+** y **npm**.
+*   **Docker Desktop** (para el stack de Supabase local).
+*   **Git**.
 
-### 2. Configuración (.env)
-
-**Apps/Web/.env.local:**
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
-```
-
-**Supabase/.env:**
-
-```env
-GEMINI_API_KEY=tu-api-key
-GROQ_API_KEY=tu-api-key
-```
-
-### 3. Base de Datos
-
-Ejecuta las migraciones en `/supabase/migrations/` en orden correlativo (0001 a 0009).
-
-### 4. Salud del Sistema
-
-Puedes verificar que todo esté bien configurado con:
-
+### 2. Configuración
 ```bash
-# Iniciar servicios de Supabase (Docker)
-npx supabase start
+# Clonar repositorio
+git clone https://github.com/Maripneitor/smartinventory.git
+cd smartinventory
 
-# Aplicar migraciones de base de datos
-npx supabase db reset
+# Instalar dependencias
+npm install
 
-# Lanzar el frontend
+# Variables de entorno
+cp .env.example .env
+# Edita .env y añade tu GEMINI_API_KEY y GROQ_API_KEY
+```
+
+### 3. Iniciar Backend (Supabase Self-Host)
+El proyecto utiliza una infraestructura completa vía Docker:
+```bash
+docker compose -f docker/docker-compose.yml up -d
+```
+*   **Postgres**: `localhost:5432`
+*   **Supabase Studio**: `localhost:3000`
+*   **API Gateway**: `localhost:8000`
+
+### 4. Lanzar Frontend
+```bash
+cd apps/web
 npm run dev
 ```
+Accede en: [http://localhost:3001](http://localhost:3001)
 
 ---
 
-## 🛠️ Tecnologías
+## 🗺️ Mapa de Arquitectura
 
-- **Frontend**: Next.js 15+, Tailwind CSS, Zustand, html5-qrcode.
-- **Backend**: Supabase (Postgres + pgvector, Auth, Storage, Edge Functions).
-- **IA**: Google Gemini 2.0 & Llama 3.2 via Groq.
-- **PDF**: jsPDF para generación de etiquetas.
+### Vistas Principales
+*   **Dashboard (`/`)**: Resumen, estadísticas y panel de préstamos familiares activos.
+*   **Scanner Inteligente (`/scan`)**: Interceptor de QRs para X-Ray de cajas y Devolución Mágica en 1 toque.
+*   **Ruta de Recolección (`/picking`)**: Generación de trayectorias óptimas para recolección de múltiples objetos.
+*   **Búsqueda Mágica (`/search`)**: Motor reactivo con soporte semántico (pgvector).
+*   **Gestión de Contenedores (`/containers`)**: Organización jerárquica de cajas y ubicaciones.
+
+### Core Stack
+*   **Frontend**: Next.js 15 (App Router), Tailwind CSS, Framer Motion, Zustand, Sonner.
+*   **Backend**: Supabase (Postgres, Auth, Storage, Edge Functions).
+*   **IA**: Google Gemini 2.0 (Vision) & Llama 3.2 (Groq Fallback).
+*   **Persistencia Local**: Dexie.js (Sincronización Offline).
 
 ---
 
-## 📦 Estructura
+## 📜 Normativa de IDs y Nomenclatura
 
-- `@/core`: Lógica de negocio consumible por toda la app.
-- `supabase/functions`: Cerebros de IA en la nube.
-- `supabase/migrations`: Planos de la base de datos.
+SmartInventory utiliza un sistema de identificación jerárquico y legible para humanos:
 
-Desarrollado con ❤️ para organizar el caos. ¡Disfruta tu inventario inteligente!
+### Estructura del Número de Serie (S/N)
+`[CAT]-[AÑO]-[ID_CORRELATIVO]`
+*   **CAT**: Código de categoría (Ej: `ELEC` para Electrónica, `HERR` para Herramientas).
+*   **AÑO**: Últimos dos dígitos del año actual.
+*   **ID**: Hash alfanumérico corto anti-colisión.
+
+Ejemplo: `ELEC-26-X8F2`
+
+---
+
+## 🏗️ Estabilidad y Calidad
+*   **Race Condition Prevention**: Buscador global con `AbortController`.
+*   **Strict Typing**: Eliminación de `any` en servicios core y respuestas de IA.
+*   **Bento UI**: Diseño consistente basado en Glassmorphism y micro-interacciones.
+
+---
+*Desarrollado con ❤️ por el equipo de SmartInventory - 2026*

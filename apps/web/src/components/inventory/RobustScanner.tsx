@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, X, Loader2, CheckCircle, AlertCircle, HelpCircle, RefreshCw } from 'lucide-react';
 import { robustAI } from '@/core/services/robustAIService';
+import { type AIAnalysisResult } from '@/core/types/ai';
 import { toast } from 'sonner';
 
 interface ScannerProps {
   onItemAdded?: () => void;
-  onScanSuccess?: (draft: any) => void; // New callback for the Staff Engineer flow
+  onScanSuccess?: (draft: Partial<AIAnalysisResult>) => void; 
   onClose?: () => void;
 }
 
@@ -16,7 +17,7 @@ type Step = 'capture' | 'analyzing' | 'review' | 'saving' | 'complete';
 export function RobustScanner({ onItemAdded, onScanSuccess, onClose }: ScannerProps) {
   const [step, setStep] = useState<Step>('capture');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -37,10 +38,10 @@ export function RobustScanner({ onItemAdded, onScanSuccess, onClose }: ScannerPr
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error accessing camera:', err);
       let msg = 'No se pudo acceder a la cámara. Permite el acceso en la configuración.';
-      if (err.name === 'NotFoundError') msg = 'No se encontró una cámara.';
+      if (err instanceof Error && err.name === 'NotFoundError') msg = 'No se encontró una cámara.';
       setError(msg);
       setIsCameraActive(false);
     }
@@ -92,20 +93,36 @@ export function RobustScanner({ onItemAdded, onScanSuccess, onClose }: ScannerPr
     setError(null);
     try {
       const result = await robustAI.analyzeImage(imageDataUrl);
+      
+      // Pro Feedback
+      if (typeof window !== "undefined") {
+        if (window.navigator.vibrate) window.navigator.vibrate(100);
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      }
+
       setAnalysisResult(result);
       if (result.needsReview) setStep('review');
       else {
         setStep('saving');
         await saveItem(result);
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al analizar la imagen');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al analizar la imagen';
+      setError(msg);
       setStep('capture');
       toast.error('Análisis fallido', { description: 'Intenta nuevamente o usa otra foto' });
     }
   };
 
-  const saveItem = async (result: any) => {
+  const saveItem = async (result: AIAnalysisResult) => {
     // If the Staff Engineer flow is active, we delegate the assignment
     if (onScanSuccess) {
       onScanSuccess({
@@ -155,15 +172,17 @@ export function RobustScanner({ onItemAdded, onScanSuccess, onClose }: ScannerPr
          item_type: 'device',
          condition: 'used',
          tags: result.tags || [],
-         ai_metadata: result
+         ai_metadata: result,
+         specifications: result.specifications || {}
       });
       
       toast.success('¡Item agregado!', { description: result.name });
       setStep('complete');
       setTimeout(() => { onItemAdded?.(); onClose?.(); }, 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'Error al guardar el item');
+      const msg = err instanceof Error ? err.message : 'Error al guardar el item';
+      setError(msg);
       setStep('review');
     }
   };

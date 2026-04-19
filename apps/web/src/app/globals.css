@@ -10,21 +10,35 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
-  --color-primary: #3b82f6;
-  --color-primary-foreground: #ffffff;
+  --color-primary: #005faf;
+  --color-primary-container: #4693f1;
+  --color-on-primary-container: #002b55;
+  
+  --color-secondary: #006398;
+  --color-secondary-container: #6cbdfe;
+  
+  --color-tertiary: #2b5bb5;
+  --color-tertiary-container: #658fed;
+  --color-on-tertiary-container: #002763;
 
-  --color-secondary: #1f2937;
-  --color-secondary-foreground: #f9fafb;
+  --color-surface: #f5faff;
+  --color-surface-container-low: #e9f5ff;
+  --color-surface-container: #e1f0fb;
+  --color-surface-container-high: #dbeaf5;
+  --color-surface-container-highest: #d6e5ef;
+  --color-surface-container-lowest: #ffffff;
+  
+  --color-on-surface: #0f1d25;
+  --color-on-surface-variant: #404752;
+  
+  --color-outline: #707883;
+  --color-outline-variant: #bfc7d4;
+  
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
 
-  --color-muted: #6b7280;
-  --color-muted-foreground: #9ca3af;
-
-  --color-border: var(--border);
-
-  --color-success: #10b981;
-  --color-error: #ef4444;
-  --color-warning: #f59e0b;
-  --color-info: #3b82f6;
+  --font-headline: var(--font-outfit);
+  --font-body: var(--font-inter);
 }
 
 @layer base {
@@ -59,30 +73,18 @@
   }
 }
 
-@utility glass {
-  background-color: var(--color-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-border);
+@utility glass-panel {
+  background-color: rgba(225, 240, 251, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
-@utility glass-card {
-  @apply glass rounded-3xl p-5 transition-all duration-300;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-}
-
-@utility glass-blue {
-  background-color: rgba(59, 130, 246, 0.05);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(59, 130, 246, 0.1);
+@utility cloud-shadow {
+  box-shadow: 0 32px 64px -12px rgba(15, 29, 37, 0.05);
 }
 
 @utility skeleton {
-  @apply relative overflow-hidden bg-sky-100 rounded-xl before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-linear-to-r before:from-transparent before:via-white/20 before:to-transparent;
+  @apply relative overflow-hidden bg-surface-container-low rounded-xl before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-linear-to-r before:from-transparent before:via-white/20 before:to-transparent;
 }
 
 @keyframes shimmer {

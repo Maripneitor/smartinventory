@@ -1,22 +1,21 @@
 import { useEffect, useState } from "react";
-import { useToast } from "@/providers/toast-provider";
+import { toast } from "sonner";
 import { processSyncQueue } from "@/core/sync";
 
 export function useOfflineSync() {
     const [isOnline, setIsOnline] = useState(true);
-    const { toast } = useToast();
 
     useEffect(() => {
         if (typeof window === "undefined") return;
 
         const handleOnline = () => {
             setIsOnline(true);
-            processSyncQueue(toast);
+            processSyncQueue();
         };
 
         const handleOffline = () => {
             setIsOnline(false);
-            toast("Operando sin conexión. Los cambios se guardarán localmente.", "info");
+            toast.info("Operando sin conexión. Los cambios se guardarán localmente.");
         };
 
         window.addEventListener("online", handleOnline);

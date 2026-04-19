@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils";
 interface ContainerLabelProps {
     containerId: string;
     label: string;
+    variant?: 'outline' | 'primary';
 }
 
-export function ContainerLabelPrinter({ containerId, label }: ContainerLabelProps) {
+export function ContainerLabelPrinter({ containerId, label, variant = 'outline' }: ContainerLabelProps) {
     const [generating, setGenerating] = useState(false);
     const [open, setOpen] = useState(false);
 
@@ -64,16 +65,28 @@ export function ContainerLabelPrinter({ containerId, label }: ContainerLabelProp
 
     return (
         <div className="relative">
-            <Button
-                variant="outline"
-                disabled={generating}
-                onClick={() => setOpen(!open)}
-                className="flex h-10 gap-2 items-center justify-center rounded-xl bg-zinc-900 border-white/5 text-zinc-400 px-3 transition-all active:scale-95"
-            >
-                {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-                <span className="text-xs font-bold uppercase hidden md:inline">Imprimir</span>
-                <ChevronDown className={cn("h-3 w-3 opacity-50 transition-transform", open && "rotate-180")} />
-            </Button>
+            {variant === 'primary' ? (
+                <Button
+                    disabled={generating}
+                    onClick={() => setOpen(!open)}
+                    className="h-12 px-6 bg-[#1E90FF] hover:bg-[#1C86EE] text-white rounded-2xl font-body font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2"
+                >
+                    {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                    <span>Imprimir Etiqueta QR</span>
+                    <ChevronDown className={cn("h-3 w-3 opacity-50 transition-transform", open && "rotate-180")} />
+                </Button>
+            ) : (
+                <Button
+                    variant="outline"
+                    disabled={generating}
+                    onClick={() => setOpen(!open)}
+                    className="flex h-11 gap-2 items-center justify-center rounded-2xl bg-surface-container-lowest border-outline-variant/30 text-on-surface px-4 transition-all active:scale-95 shadow-sm"
+                >
+                    {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                    <span className="text-xs font-bold uppercase hidden md:inline">Imprimir</span>
+                    <ChevronDown className={cn("h-3 w-3 opacity-50 transition-transform", open && "rotate-180")} />
+                </Button>
+            )}
 
             {open && (
                 <>

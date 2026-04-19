@@ -23,7 +23,7 @@ export interface SearchResult {
   price?: number;
   source: string;
   relevanceScore: number;
-  attributes: Record<string, any>;
+  attributes: Record<string, string | number | boolean | null>;
   similarItems?: SearchResult[];
 }
 
@@ -183,18 +183,18 @@ class RobustSearchService {
     return embedding;
   }
 
-  private formatResults(data: any[]): SearchResult[] {
+  private formatResults(data: Record<string, any>[]): SearchResult[] {
     return data.map(item => ({
-      id: item.id,
-      name: (item.name || '').slice(0, 100).replace(/[<>]/g, '').trim(),
-      brand: (item.brand || '').slice(0, 50),
-      category: item.category || 'Otros',
-      description: (item.description || '').slice(0, 200),
-      imageUrl: item.image_url,
+      id: (item.id as string),
+      name: ((item.name || '') as string).slice(0, 100).replace(/[<>]/g, '').trim(),
+      brand: ((item.brand || '') as string).slice(0, 50),
+      category: (item.category || 'Otros') as string,
+      description: ((item.description || '') as string).slice(0, 200),
+      imageUrl: item.image_url as string | undefined,
       price: item.price ? Number(item.price) : undefined,
-      source: item.source || 'local',
-      relevanceScore: item.similarity || 0.5,
-      attributes: item.attributes || {}
+      source: (item.source || 'local') as string,
+      relevanceScore: (item.similarity || 0.5) as number,
+      attributes: (item.attributes || {}) as Record<string, any>
     }));
   }
 

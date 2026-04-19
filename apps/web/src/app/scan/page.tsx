@@ -2,15 +2,36 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { ChevronLeft, Camera, Loader2, Info, AlertCircle, CheckCircle2, RefreshCcw, X, ExternalLink } from "lucide-react";
+import { 
+    ChevronLeft, 
+    Camera, 
+    Loader2, 
+    Info, 
+    AlertCircle, 
+    CheckCircle2, 
+    RefreshCcw, 
+    X, 
+    ExternalLink,
+    History,
+    Zap
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { type Container } from "@/entities/container/schema";
 import { type Item } from "@/entities/item/schema";
 import { containersService } from "@/core/containers";
 import { itemsService } from "@/core/items";
-import { createSignedPhotoUrls } from "@/core/storage";
 import { InventoryCard } from "@/components/inventory/inventory-card";
+import { QuickReturnModal } from "@/components/inventory/QuickReturnModal";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+
+interface ScanHistoryItem {
+    id: string;
+    label: string;
+    itemsCount: number;
+    timestamp: string;
+}
 
 export default function ScanPage() {
     const router = useRouter();
@@ -22,71 +43,117 @@ export default function ScanPage() {
     const [xrayData, setXrayData] = useState<{ container: Container; items: Item[]; signedUrls: Record<string, string> } | null>(null);
     const [fetchingXray, setFetchingXray] = useState(false);
 
-    const onScanSuccess = useCallback(async (decodedText: string) => {
-        if (fetchingXray) return;
+    // History state
+    const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
 
-        // Haptic feedback
-        if (typeof window !== "undefined" && window.navigator.vibrate) {
-            window.navigator.vibrate(200);
+    // Return Flow state
+    const [returnItem, setReturnItem] = useState<(Item & { containers?: Container }) | null>(null);
+    const [showReturnModal, setShowReturnModal] = useState(false);
+
+    const playBeep = () => {
+        try {
+            const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        } catch (e) {
+            console.warn("Audio feedback failed", e);
+        }
+    };
+
+    const onScanSuccess = useCallback(async (decodedText: string) => {
+        if (fetchingXray || showReturnModal) return;
+
+        // Pro Feedback: Haptic & Audio
+        if (typeof window !== "undefined") {
+            if (window.navigator.vibrate) window.navigator.vibrate([100, 50, 100]);
+            playBeep();
         }
 
         try {
             setStatus("success");
 
             let targetId = decodedText;
+            let isItem = false;
 
             try {
                 const url = new URL(decodedText);
                 if (url.pathname.includes('/containers/')) {
                     targetId = url.pathname.split('/').pop() || "";
+                } else if (url.pathname.includes('/items/')) {
+                    targetId = url.pathname.split('/').pop() || "";
+                    isItem = true;
                 }
-            } catch { }
+            } catch { 
+                if (decodedText.length === 36) {
+                    // Possible UUID
+                }
+            }
 
             if (targetId.length >= 20) {
                 setFetchingXray(true);
                 try {
+                    if (isItem || targetId.length === 36) {
+                        const { data: item } = await containersService.createClient()
+                            .from('items')
+                            .select('*, containers(*, locations(*))')
+                            .eq('id', targetId)
+                            .single();
+                        
+                        if (item && item.borrowed_by) {
+                            setReturnItem(item as (Item & { containers?: Container }));
+                            setShowReturnModal(true);
+                            await scannerRef.current?.stop();
+                            setFetchingXray(false);
+                            return;
+                        }
+                    }
+
                     const [container, items] = await Promise.all([
                         containersService.getById(targetId),
                         itemsService.getByContainer(targetId)
                     ]);
 
-                    const urls: Record<string, string> = {};
-                    const itemsConFoto = items.filter(i => !!i.photo_path);
-                    const paths = itemsConFoto.map(i => i.photo_path as string);
-
-                    if (paths.length > 0) {
-                        try {
-                            const signedData = await createSignedPhotoUrls(paths);
-                            itemsConFoto.forEach(item => {
-                                const found = signedData.find((d: any) => d.path === item.photo_path);
-                                if (found && !found.error && found.signedUrl) {
-                                    urls[item.id] = found.signedUrl;
-                                }
-                            });
-                        } catch (e) {
-                            console.error("Error signing URLs", e);
-                        }
+                    if (container) {
+                        setXrayData({ container, items, signedUrls: {} });
+                        setScanHistory(prev => [{
+                            id: container.id,
+                            label: container.label,
+                            itemsCount: items.length,
+                            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        }, ...prev].slice(0, 5));
+                        await scannerRef.current?.stop();
+                    } else {
+                        setStatus("error");
+                        setErrorMsg("Contenedor no encontrado");
                     }
-
-                    setXrayData({ container, items, signedUrls: urls });
-                    // Detener el scanner para ahorrar recursos mientras ve los rayos X
-                    await scannerRef.current?.stop();
                 } catch (e) {
-                    console.error("X-ray fetch failed", e);
-                    router.push(`/containers/${targetId}`);
+                    console.error("Scan fetch failed", e);
+                    setStatus("error");
+                    setErrorMsg("Error al obtener datos");
                 } finally {
                     setFetchingXray(false);
                 }
             } else {
                 setStatus("ready");
-                setErrorMsg("QR no reconocido como una caja de SmartInventory");
+                setErrorMsg("QR no reconocido");
                 setTimeout(() => setErrorMsg(null), 3000);
             }
         } catch (e) {
             console.error(e);
             setStatus("ready");
         }
-    }, [router, fetchingXray]);
+    }, [fetchingXray, showReturnModal]);
 
     useEffect(() => {
         const scanner = new Html5Qrcode("reader");
@@ -110,18 +177,17 @@ export default function ScanPage() {
                 let message = "Error al acceder a la cámara.";
                 if (err instanceof Error) {
                     if (err.name === "NotAllowedError" || err.message.includes("Permission denied")) {
-                        message = "Permiso de cámara denegado. Por favor, habilítalo en los ajustes de tu navegador para poder escanear.";
+                        message = "Permiso de cámara denegado. Habilítalo en ajustes.";
                     } else {
                         message = err.message;
                     }
                 }
-                console.error(err);
                 setStatus("error");
                 setErrorMsg(message);
             }
         };
 
-        if (!xrayData) {
+        if (!xrayData && !showReturnModal) {
             startScanner();
         }
 
@@ -130,144 +196,196 @@ export default function ScanPage() {
                 scanner.stop().catch(e => console.error("Error stopping", e));
             }
         };
-    }, [onScanSuccess, xrayData]);
+    }, [onScanSuccess, xrayData, showReturnModal]);
 
-    const resetScanner = async () => {
+    const resetScanner = () => {
         setXrayData(null);
+        setReturnItem(null);
+        setShowReturnModal(false);
         setStatus("loading");
-        // El useEffect se encargará de reiniciar el scanner al cambiar xrayData a null
+    };
+
+    const handleReturn = async () => {
+        if (!returnItem) return;
+        try {
+            await itemsService.returnItem(returnItem.id, returnItem.container_id);
+            toast.success("¡Objeto devuelto!");
+            resetScanner();
+        } catch (e) {
+            toast.error("Error en devolución");
+        }
     };
 
     return (
-        <div className="flex flex-col gap-6 min-h-[80vh]">
-            <header className="flex items-center gap-4">
-                <Link href="/" className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400 active:scale-95 transition-all">
-                    <ChevronLeft className="h-6 w-6" />
+        <div className="max-w-6xl mx-auto py-10 px-4 space-y-12 min-h-screen">
+            {/* Modal de Devolución Rápida */}
+            {returnItem && (
+                <QuickReturnModal
+                    isOpen={showReturnModal}
+                    onClose={resetScanner}
+                    item={{ ...returnItem, borrower_name: "Papá" }}
+                    originalContainer={returnItem.containers}
+                    onConfirm={handleReturn}
+                    onAltAction={() => router.push(`/items/${returnItem.id}/move`)}
+                />
+            )}
+
+            {/* Header Editorial */}
+            <div className="flex flex-col gap-4">
+                <Link 
+                    href="/" 
+                    className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-xs font-black uppercase tracking-widest"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                    Dashboard
                 </Link>
-                <h1 className="text-2xl font-bold text-white tracking-tight">Escanear QR</h1>
-            </header>
+                <div className="flex items-end justify-between">
+                    <div>
+                        <motion.h1 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-5xl md:text-6xl font-headline font-bold text-on-surface tracking-tighter"
+                        >
+                            Escáner <span className="text-primary italic">IA</span>
+                        </motion.h1>
+                        <p className="text-on-surface-variant font-body text-lg mt-2">Visión artificial para tu inventario físico.</p>
+                    </div>
+                    <div className="hidden md:flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container-low text-primary cloud-shadow">
+                        <Zap className="h-8 w-8" />
+                    </div>
+                </div>
+            </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center gap-8">
-                {/* Scanner Window */}
-                <div className="relative w-full max-w-sm overflow-hidden rounded-[2.5rem] border border-white/10 bg-zinc-950 shadow-2xl">
-                    <div id="reader" className="w-full aspect-square bg-black overflow-hidden object-cover"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                {/* Scanner Viewport */}
+                <div className="lg:col-span-7 space-y-8">
+                    <div className="relative aspect-square md:aspect-video w-full overflow-hidden rounded-[3rem] bg-zinc-950 cloud-shadow border-4 border-surface-container-low">
+                        <div id="reader" className="w-full h-full object-cover"></div>
 
-                    {/* Overlay de Enfoque */}
-                    {status === "ready" && (
-                        <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                            <div className="w-64 h-64 border-2 border-blue-500/50 rounded-3xl relative">
-                                <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-xl"></div>
-                                <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-xl"></div>
-                                <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-xl"></div>
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-xl"></div>
-                                <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500/30 animate-scan-line"></div>
-                            </div>
+                        {/* Scanner Overlay UI */}
+                        <AnimatePresence>
+                            {status === "ready" && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="absolute inset-0 pointer-events-none flex items-center justify-center"
+                                >
+                                    <div className="w-64 h-64 border-2 border-primary/30 rounded-[2rem] relative">
+                                        <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-2xl"></div>
+                                        <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-2xl"></div>
+                                        <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-2xl"></div>
+                                        <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-2xl"></div>
+                                        <div className="absolute top-1/2 left-0 right-0 h-1 bg-primary/20 animate-scan-line"></div>
+                                    </div>
+                                    <p className="absolute bottom-10 text-[10px] font-black text-white/60 uppercase tracking-[0.3em]">Buscando Identificador...</p>
+                                </motion.div>
+                            )}
+
+                            {(status === "loading" || fetchingXray) && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-highest/80 backdrop-blur-xl z-10"
+                                >
+                                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                                    <p className="mt-4 text-xs font-black uppercase tracking-widest text-on-surface">
+                                        {fetchingXray ? "Procesando Rayos X..." : "Calibrando Óptica..."}
+                                    </p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    <div className="flex items-start gap-4 p-6 bg-surface-container-low rounded-3xl border border-primary/5">
+                        <Info className="h-6 w-6 text-primary shrink-0" />
+                        <div>
+                            <p className="text-sm font-bold text-on-surface leading-tight">Consejo de Iluminación</p>
+                            <p className="text-xs text-on-surface-variant mt-1">Asegúrate de que el código QR esté bien iluminado y plano para una detección instantánea por parte de la IA.</p>
                         </div>
-                    )}
-
-                    {/* Estados del Scanner */}
-                    {(status === "loading" || fetchingXray) && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80 backdrop-blur-md z-10">
-                            <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-                            <p className="mt-4 text-xs font-bold uppercase tracking-widest text-zinc-500">
-                                {fetchingXray ? "Obteniendo Rayos X..." : "Iniciando Cámara..."}
-                            </p>
-                        </div>
-                    )}
-
-                    {status === "success" && !xrayData && !fetchingXray && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-blue-600/20 backdrop-blur-xl animate-in fade-in duration-300 z-10">
-                            <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/50 animate-bounce">
-                                <CheckCircle2 className="h-10 w-10 text-white" />
-                            </div>
-                            <p className="mt-4 text-sm font-bold text-white uppercase tracking-widest">¡Caja Detectada!</p>
-                        </div>
-                    )}
-
-                    {status === "error" && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/20 backdrop-blur-xl p-8 text-center z-10">
-                            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-                            <p className="text-sm font-bold text-white mb-2">{errorMsg}</p>
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="flex items-center gap-2 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold uppercase transition-all"
-                            >
-                                <RefreshCcw className="h-3 w-3" /> Reintentar
-                            </button>
-                        </div>
-                    )}
+                    </div>
                 </div>
 
-                {!xrayData && (
-                    <div className="flex flex-col items-center gap-4 text-center px-6">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-400">
-                            <Camera className="h-6 w-6" />
+                {/* History & Status Sidebar */}
+                <div className="lg:col-span-5 space-y-8">
+                    <section className="space-y-6">
+                        <div className="flex items-center gap-3">
+                            <History className="h-5 w-5 text-on-surface-variant" />
+                            <h3 className="font-headline font-bold text-on-surface text-xl">Escaneos Recientes</h3>
                         </div>
-                        <div>
-                            <p className="font-bold text-lg text-white">Apunta a la etiqueta QR</p>
-                            <p className="text-zinc-500 text-sm max-w-[280px]">Escanea el código de una caja para ver su contenido al instante.</p>
-                        </div>
-                    </div>
-                )}
 
-                {/* X-Ray View Overlay */}
-                {xrayData && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-100 flex flex-col animate-in fade-in slide-in-from-bottom-10 duration-500">
-                        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-                            <div className="flex items-center justify-between sticky top-0 bg-transparent z-10 py-2">
-                                <button onClick={resetScanner} className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-zinc-400">
-                                    <X className="h-6 w-6" />
-                                </button>
-                                <Link
-                                    href={`/containers/${xrayData.container.id}`}
-                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl text-xs font-bold text-white uppercase tracking-tighter shadow-lg shadow-blue-500/20"
+                        <div className="space-y-3">
+                            {scanHistory.length > 0 ? scanHistory.map((item, i) => (
+                                <motion.div 
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    key={`${item.id}-${i}`}
+                                    className="p-5 bg-surface-container-lowest rounded-2xl cloud-shadow border border-outline-variant/10 flex items-center justify-between group hover:border-primary/30 transition-all cursor-pointer"
+                                    onClick={() => router.push(`/containers/${item.id}`)}
                                 >
-                                    Abrir Caja <ExternalLink className="h-3.5 w-3.5" />
-                                </Link>
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center font-bold text-xs">
+                                            {item.label.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-on-surface text-sm">{item.label}</p>
+                                            <p className="text-[10px] text-on-surface-variant font-medium uppercase tracking-wider">{item.itemsCount} Objetos · {item.timestamp}</p>
+                                        </div>
+                                    </div>
+                                    <ChevronLeft className="h-4 w-4 text-on-surface-variant rotate-180 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                </motion.div>
+                            )) : (
+                                <div className="py-12 border-2 border-dashed border-outline-variant/20 rounded-[2rem] flex flex-col items-center justify-center text-center px-8">
+                                    <Camera className="h-10 w-10 text-on-surface-variant/20 mb-3" />
+                                    <p className="text-sm font-bold text-on-surface-variant/40">Tu historial de escaneo aparecerá aquí.</p>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            {/* X-Ray View Overlay */}
+            <AnimatePresence>
+                {xrayData && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 100 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 100 }}
+                        className="fixed inset-0 bg-surface/90 backdrop-blur-3xl z-[100] flex flex-col p-6 md:p-12 overflow-y-auto"
+                    >
+                        <div className="max-w-5xl mx-auto w-full space-y-12">
+                            <div className="flex items-center justify-between">
+                                <button 
+                                    onClick={resetScanner} 
+                                    className="h-14 w-14 flex items-center justify-center rounded-2xl bg-surface-container-highest text-on-surface hover:bg-surface-container transition-colors shadow-sm"
+                                >
+                                    <X className="h-8 w-8" />
+                                </button>
+                                <Button 
+                                    onClick={() => router.push(`/containers/${xrayData.container.id}`)}
+                                    className="h-14 px-8 rounded-2xl bg-primary text-on-primary font-bold shadow-xl shadow-primary/20"
+                                >
+                                    Ver Detalles Completos
+                                </Button>
                             </div>
 
-                            <header className="flex flex-col gap-1">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-400">Vista de Rayos X</p>
-                                <h2 className="text-4xl font-extrabold text-white tracking-tight">{xrayData.container.label}</h2>
-                                <p className="text-xs text-zinc-500 font-medium">Contiene {xrayData.items.length} objetos</p>
+                            <header className="space-y-4">
+                                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+                                    <Zap className="h-3 w-3" /> Rayos X IA
+                                </div>
+                                <h2 className="text-6xl font-headline font-bold text-on-surface tracking-tighter">{xrayData.container.label}</h2>
+                                <p className="text-xl text-on-surface-variant font-body">Contiene {xrayData.items.length} objetos detectados en este contenedor.</p>
                             </header>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {xrayData.items.map(item => (
-                                    <InventoryCard
-                                        key={item.id}
-                                        item={item}
-                                        signedUrl={xrayData.signedUrls[item.id]}
-                                    />
+                                    <InventoryCard key={item.id} item={item} />
                                 ))}
-                                {xrayData.items.length === 0 && (
-                                    <div className="col-span-full py-10 bg-white/5 rounded-3xl border border-white/5 text-center px-6">
-                                        <p className="text-zinc-500 text-sm italic">Esta caja está vacía.</p>
-                                    </div>
-                                )}
                             </div>
                         </div>
-
-                        <div className="p-6 bg-transparent border-t border-white/5">
-                            <button
-                                onClick={resetScanner}
-                                className="w-full py-4 rounded-2xl bg-white text-black font-bold text-lg active:scale-95 transition-all shadow-xl shadow-white/5"
-                            >
-                                Escanear otra caja
-                            </button>
-                        </div>
-                    </div>
+                    </motion.div>
                 )}
-
-                {!xrayData && (
-                    <div className="flex items-start gap-3 rounded-3xl bg-zinc-900/50 border border-white/5 p-5 max-w-sm mx-4">
-                        <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-zinc-500 leading-relaxed font-medium">
-                            Si el QR está dañado o la cámara no enfoca, busca el identificador de la caja en la sección de <Link href="/containers" className="text-blue-500 underline">Inventario</Link>.
-                        </p>
-                    </div>
-                )}
-            </div>
+            </AnimatePresence>
         </div>
     );
 }

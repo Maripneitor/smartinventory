@@ -63,7 +63,7 @@ async function geminiVisionJson(params: {
   const prompt = `
 Analiza esta imagen de un objeto doméstico.
 Devuélveme SOLO un JSON válido con:
-nombre_corto, categoria, descripcion, color, tags (3-8), posible_dispositivo.
+nombre_corto, categoria, descripcion, color, tags (3-8), especificaciones (objeto JSON con detalles técnicos), posible_dispositivo.
 Si no estás seguro: usa null. No inventes marcas/modelos.
 `.trim();
 
@@ -182,7 +182,7 @@ async function groqVisionJson(params: {
   const prompt = `
 Analiza esta imagen de un objeto doméstico.
 Devuélveme SOLO un JSON válido con:
-nombre_corto, categoria, descripcion, color, tags (3-8), posible_dispositivo.
+nombre_corto, categoria, descripcion, color, tags (3-8), especificaciones (objeto JSON con detalles técnicos), posible_dispositivo.
 Si no estás seguro: usa null. No inventes marcas/modelos.
 `.trim();
 

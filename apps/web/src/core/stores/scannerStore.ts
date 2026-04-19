@@ -1,15 +1,16 @@
 import { create } from 'zustand';
+import { type AIAnalysisResult } from '@/core/types/ai';
 
 interface ScannerState {
   isOpen: boolean;
   currentImage: string | null;
-  analysisResult: any | null;
+  analysisResult: AIAnalysisResult | null;
   isAnalyzing: boolean;
   
   openScanner: () => void;
   closeScanner: () => void;
   setImage: (image: string) => void;
-  setAnalysis: (result: any) => void;
+  setAnalysis: (result: AIAnalysisResult) => void;
   setAnalyzing: (status: boolean) => void;
   reset: () => void;
 }

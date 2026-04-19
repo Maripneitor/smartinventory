@@ -31,6 +31,7 @@ Deno.serve(async (req: Request) => {
       - category: Categoría (Electrónica, Herramientas, Ropa, Documentos, Otros)
       - description: Descripción detallada del objeto (en español)
       - tags: Array de 3-5 etiquetas relevantes
+      - specifications: Objeto JSON con detalles técnicos detectados (ej: marca, modelo, dimensiones, material, voltaje, etc.)
       - confidence: Nivel de confianza del análisis (0-1)
       
       Responde SOLO con el JSON, sin texto adicional ni bloques de código.

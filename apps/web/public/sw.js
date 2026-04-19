@@ -16,9 +16,25 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests and internal Next.js/HMR traffic
+  if (
+    event.request.method !== 'GET' || 
+    event.request.url.includes('_next') || 
+    event.request.url.includes('webpack') ||
+    event.request.url.includes('localhost') ||
+    !event.request.url.startsWith('http')
+  ) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+      
+      return fetch(event.request).catch(() => {
+        // Optional: return a custom offline page for navigation requests
+        return null;
+      });
     })
   );
 });

@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/shared/sidebar";
 import { BottomNav } from "@/components/shared/bottom-nav";
+import { Header } from "@/components/shared/header";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,9 +35,11 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-import { ToastProvider } from "@/providers/toast-provider";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OfflineSync } from "@/components/offline-sync";
+
+import { LoanCart } from "@/components/inventory/LoanCart";
 
 export default function RootLayout({
   children,
@@ -59,32 +62,37 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ToastProvider>
-            <OfflineSync />
-            <Sidebar />
-            <main className="relative flex min-h-screen flex-col lg:pl-72 pb-24 lg:pb-0">
-              <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
-                {children}
-              </div>
-            </main>
-            <BottomNav />
-          </ToastProvider>
+          <Toaster position="top-right" expand={false} richColors />
+          <OfflineSync />
+          <Sidebar />
+          <main className="relative flex min-h-screen flex-col lg:pl-72 pb-24 lg:pb-0">
+            <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-8">
+              <Header />
+              {children}
+            </div>
+            <LoanCart />
+          </main>
+          <BottomNav />
         </ThemeProvider>
 
 
 
-        {/* SW Registration */}
+        {/* SW Management: Unregister on localhost to avoid HMR interference, register on production */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                    console.log('SW registered: ', registration);
-                  }, function(err) {
-                    console.log('SW registration failed: ', err);
+                if (window.location.hostname === 'localhost') {
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                      registration.unregister();
+                    }
                   });
-                });
+                } else {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js');
+                  });
+                }
               }
             `,
           }}

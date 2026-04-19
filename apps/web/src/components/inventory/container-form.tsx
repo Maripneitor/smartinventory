@@ -14,7 +14,8 @@ export function ContainerForm() {
     const [locationId, setLocationId] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [maxItems, setMaxItems] = useState<number>(50);
+    const [type, setType] = useState("caja_carton");
+    const [maxCapacity, setMaxCapacity] = useState<number>(20);
 
     const [containerId, setContainerId] = useState<string>("");
 
@@ -37,7 +38,8 @@ export function ContainerForm() {
                 label: label.trim(),
                 location_id: locationId,
                 qr_payload,
-                max_items: maxItems,
+                type,
+                max_capacity: maxCapacity,
             });
 
             router.push(`/containers/${containerId}`);
@@ -70,14 +72,28 @@ export function ContainerForm() {
                 </div>
 
                 <div className="flex flex-col gap-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Tipo de Contenedor</label>
+                    <select 
+                        value={type} 
+                        onChange={(e) => setType(e.target.value)}
+                        className="w-full px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 font-medium text-white appearance-none"
+                    >
+                        <option value="caja_carton">📦 Caja de Cartón</option>
+                        <option value="cesto">🧺 Cesto / Canasta</option>
+                        <option value="bolsa">🛍️ Bolsa</option>
+                        <option value="caja_zapatos">👟 Caja de Zapatos</option>
+                    </select>
+                </div>
+
+                <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Capacidad Máxima (Items)</label>
                     <Input
                         type="number"
-                        value={maxItems}
-                        onChange={(e) => setMaxItems(parseInt(e.target.value) || 0)}
-                        placeholder="Ej: 50"
+                        value={maxCapacity}
+                        onChange={(e) => setMaxCapacity(parseInt(e.target.value) || 0)}
+                        placeholder="Ej: 20"
                     />
-                    <p className="text-[10px] text-zinc-500 italic">Te avisaremos cuando la caja esté llegando a este límite.</p>
+                    <p className="text-[10px] text-zinc-500 italic">Límite real de objetos que caben físicamente.</p>
                 </div>
 
                 <div className="rounded-xl bg-zinc-950/50 p-4 border border-white/5">

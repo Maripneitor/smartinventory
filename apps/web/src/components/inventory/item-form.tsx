@@ -7,20 +7,24 @@ import { itemsService, type ItemType, type ItemCondition } from "@/core/items";
 import { analyzeItemWithAI, generateEmbeddings } from "@/core/ai";
 import { getDevUser } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
+import { LocationPicker } from "./location-picker";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { DevicePicker } from "./device-picker";
 import { Camera, Save, Sparkles, X, Info, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/providers/toast-provider";
+import { toast } from "sonner";
+import { SpecificationsBuilder } from "./specifications-builder";
+import { RelatedItemsSelector } from "./related-items-selector";
+import { Package, Hash, Link as LinkIcon, Settings, Printer } from "lucide-react";
+import { ContainerPicker } from "./container-picker";
 
 export function ItemForm() {
-    const { toast, dismiss } = useToast();
     const router = useRouter();
 
     const sp = useSearchParams();
-    const containerId = sp.get("container") || "";
+    const containerId = sp.get("container") || null;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form State
@@ -28,11 +32,13 @@ export function ItemForm() {
     const [name, setName] = useState("");
     const [category, setCategory] = useState("");
     const [description, setDescription] = useState("");
-    const [quantity] = useState(1);
+    const [quantity, setQuantity] = useState(1);
     const [condition, setCondition] = useState<ItemCondition>("used");
     const [itemType, setItemType] = useState<ItemType>("accessory");
     const [belongsTo, setBelongsTo] = useState<string>("");
     const [tags, setTags] = useState<string[]>([]);
+    const [specifications, setSpecifications] = useState<Record<string, string>>({});
+    const [relatedItems, setRelatedItems] = useState<string[]>([]);
 
     // AI specific state
     const [aiHint, setAiHint] = useState<string | null>(null);
@@ -40,7 +46,8 @@ export function ItemForm() {
     const [aiResultCache, setAiResultCache] = useState<Record<string, any> | null>(null);
     const [photoPath, setPhotoPath] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<{ containerId: string, label: string } | null>(null);
-    const [targetContainerId, setTargetContainerId] = useState(containerId);
+    const [targetContainerId, setTargetContainerId] = useState<string | null>(containerId);
+    const [locationId, setLocationId] = useState<string | null>(null);
 
     // App State
     const [loading, setLoading] = useState(false);
@@ -54,6 +61,18 @@ export function ItemForm() {
     }, []);
 
     const [isRetouched, setIsRetouched] = useState(false);
+
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!file) {
+            setPreviewUrl(null);
+            return;
+        }
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [file]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0];
@@ -71,7 +90,7 @@ export function ItemForm() {
         if (!fileToProcess) return setErrorMsg("Sube una foto primero para que la IA pueda verla.");
 
         setAiLoading(true);
-        const toastId = toast("Analizando fotografía...", "loading");
+        const toastId = toast.loading("Analizando fotografía...");
 
         try {
             const user = await getDevUser();
@@ -103,13 +122,13 @@ export function ItemForm() {
                 }
             }
 
-            toast("¡Identificación completada!", "success");
+            toast.success("¡Identificación completada!");
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : "Falló el análisis de IA.";
             console.error(e);
-            toast(message, "error");
+            toast.error(message);
         } finally {
-            dismiss(toastId);
+            toast.dismiss(toastId);
             setAiLoading(false);
         }
     }
@@ -119,12 +138,12 @@ export function ItemForm() {
         e.preventDefault();
         setErrorMsg(null);
 
-        if (!targetContainerId) return setErrorMsg("Falta el ID del contenedor.");
+        if (!targetContainerId && !locationId) return setErrorMsg("Selecciona un contenedor o una ubicación directa.");
         if (!name.trim()) return setErrorMsg("Nombre obligatorio.");
         if (!file) return setErrorMsg("Foto obligatoria.");
 
         setLoading(true);
-        const toastId = toast("Guardando objeto...", "loading");
+        const toastId = toast.loading("Guardando objeto...");
         try {
             const user = await getDevUser();
             if (!user) throw new Error('No autenticado');
@@ -138,6 +157,7 @@ export function ItemForm() {
             await itemsService.create({
                 id: itemId,
                 container_id: targetContainerId,
+                location_id: locationId,
                 name: name.trim(),
                 category: category.trim() || null,
                 description: description.trim() || null,
@@ -148,6 +168,8 @@ export function ItemForm() {
                 photo_path: path,
                 photo_mime: file?.type,
                 tags,
+                specifications,
+                related_items: relatedItems,
                 ai_metadata: aiResultCache || {},
                 file: file || undefined
             });
@@ -158,14 +180,18 @@ export function ItemForm() {
                 await generateEmbeddings({ item_id: itemId, text: textToEmbed });
             } catch (e) { }
 
-            toast("Objeto guardado con éxito", "success");
-            router.push(`/containers/${targetContainerId}`);
+            toast.success("Objeto guardado con éxito");
+            if (targetContainerId) {
+                router.push(`/containers/${targetContainerId}`);
+            } else {
+                router.push(`/`);
+            }
             router.refresh();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Error guardando item.";
-            toast(message, "error");
+            toast.error(message);
         } finally {
-            dismiss(toastId);
+            toast.dismiss(toastId);
             setLoading(false);
         }
     }
@@ -192,7 +218,7 @@ export function ItemForm() {
                     {file ? (
                         <div className="relative h-full w-full">
                             <img
-                                src={URL.createObjectURL(file)}
+                                src={previewUrl || ""}
                                 className={cn(
                                     "h-full w-full object-cover transition-all duration-1000",
                                     aiLoading && "opacity-40 blur-xl",
@@ -311,27 +337,64 @@ export function ItemForm() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                    <div className="flex flex-col gap-3">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Zona de Almacenamiento</label>
+                        <LocationPicker 
+                            value={locationId || ""} 
+                            onChange={(id) => {
+                                setLocationId(id);
+                                setTargetContainerId(null); // Reset container when location changes
+                            }} 
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Contenedor / Caja (Opcional)</label>
+                        <ContainerPicker 
+                            locationId={locationId} 
+                            value={targetContainerId} 
+                            onChange={setTargetContainerId} 
+                        />
+                        <p className="text-[10px] text-zinc-600 italic">Si no seleccionas un contenedor, el objeto se marcará como "Suelto" en la ubicación seleccionada.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                         <div className="flex flex-col gap-3">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Clasificación / Categoría</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Clasificación</label>
                             <Input
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                placeholder="Ej. Electrónica, Herrajes..."
+                                placeholder="Ej. Electrónica..."
                                 className="h-14 rounded-2xl bg-zinc-950 font-bold"
                             />
                         </div>
                         <div className="flex flex-col gap-3">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Estado de Conservación</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Cantidad</label>
+                            <div className="flex items-center bg-zinc-950 rounded-2xl border border-white/5 h-14 px-4 gap-4">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                    className="h-8 w-8 flex items-center justify-center bg-zinc-900 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                                >-</button>
+                                <span className="flex-1 text-center font-black text-white">{quantity}</span>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setQuantity(quantity + 1)}
+                                    className="h-8 w-8 flex items-center justify-center bg-zinc-900 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                                >+</button>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Estado</label>
                             <div className="relative">
                                 <select
                                     value={condition}
                                     onChange={e => setCondition(e.target.value as ItemCondition)}
                                     className="h-14 w-full rounded-2xl border border-white/5 bg-zinc-950 px-5 text-white font-bold focus:border-blue-500 focus:outline-none appearance-none transition-all"
                                 >
-                                    <option value="used" className="bg-zinc-900">Usado (Bueno)</option>
-                                    <option value="new" className="bg-zinc-900">Nuevo / Sellado</option>
-                                    <option value="defective" className="bg-zinc-900">Defectuoso / Dañado</option>
+                                    <option value="used" className="bg-zinc-900">Usado</option>
+                                    <option value="new" className="bg-zinc-900">Nuevo</option>
+                                    <option value="defective" className="bg-zinc-900">Dañado</option>
                                 </select>
                                 <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
                                     <ChevronLeft className="h-4 w-4 rotate-[270deg]" />
@@ -377,6 +440,22 @@ export function ItemForm() {
                             placeholder="Detalles sobre el objeto, marca, modelo, o cualquier nota relevante..."
                             className="w-full rounded-2xl border border-white/5 bg-zinc-950 px-6 py-4 text-white font-medium placeholder:text-zinc-800 focus:outline-none focus:border-blue-500/50 transition-all resize-none"
                         />
+                    </div>
+
+                    <div className="flex flex-col gap-6 pt-4 border-t border-white/5">
+                        <div className="flex items-center gap-2">
+                            <Settings className="h-4 w-4 text-primary" />
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Especificaciones Técnicas</label>
+                        </div>
+                        <SpecificationsBuilder value={specifications} onChange={setSpecifications} />
+                    </div>
+
+                    <div className="flex flex-col gap-6 pt-4 border-t border-white/5">
+                        <div className="flex items-center gap-2">
+                            <LinkIcon className="h-4 w-4 text-primary" />
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Objetos Relacionados</label>
+                        </div>
+                        <RelatedItemsSelector value={relatedItems} onChange={setRelatedItems} />
                     </div>
 
                     {tags.length > 0 && (

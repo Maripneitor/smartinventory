@@ -8,7 +8,7 @@ import { analyzeWithAI } from '@/core/services/aiService';
 import { compressImage } from '@/core/utils/imageCompression';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/providers/toast-provider';
+import { toast } from 'sonner';
 
 
 interface ScannerProps {
@@ -17,7 +17,6 @@ interface ScannerProps {
 }
 
 export function Scanner({ onItemAdded, onClose }: ScannerProps) {
-  const { toast, dismiss } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { 
     currentImage, 
@@ -52,10 +51,10 @@ export function Scanner({ onItemAdded, onClose }: ScannerProps) {
         const result = await analyzeWithAI(compressed);
         
         setAnalysis(result);
-        toast('¡Objeto identificado con éxito!', 'success');
+        toast.success('¡Objeto identificado con éxito!');
       } catch (error) {
         console.error('Analysis failed:', error);
-        toast('No se pudo analizar la imagen. Inténtalo de nuevo.', 'error');
+        toast.error('No se pudo analizar la imagen. Inténtalo de nuevo.');
       } finally {
         setAnalyzing(false);
       }

@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
             content: [
               {
                 type: 'text',
-                text: 'Analiza esta imagen y devuelve JSON con name, category, description, tags, confidence. Responde solo con JSON.',
+                text: 'Analiza esta imagen y devuelve JSON con name, category, description, tags, specifications (objeto con detalles técnicos como marca, modelo, etc.), confidence. Responde solo con JSON.',
               },
               {
                 type: 'image_url',

@@ -1,14 +1,5 @@
 import { cache } from '@/core/utils/cache';
-
-export interface AIAnalysisResult {
-  name: string;
-  category: string;
-  description: string;
-  tags: string[];
-  confidence: number;
-  needsReview: boolean;
-  alternativeNames?: string[];
-}
+import { type AIAnalysisResult } from '@/core/types/ai';
 
 interface AIError {
   type: 'network' | 'timeout' | 'rate_limit' | 'invalid_image' | 'unknown';
@@ -42,7 +33,6 @@ class RobustAIService {
     const cacheKey = `ai_analysis_${await this.hashImage(imageDataUrl)}`;
     const cached = await cache.get(cacheKey);
     if (cached) {
-      console.log('✅ Usando resultado en caché');
       return cached;
     }
 
@@ -69,7 +59,6 @@ class RobustAIService {
     }
 
     if (!result || result.confidence < 0.4) {
-      console.log('🔄 Intentando con Groq (fallback)');
       try {
         const groqResult = await this.analyzeWithGroq(imageDataUrl);
         if (groqResult && groqResult.confidence > (result?.confidence || 0)) {
@@ -81,7 +70,6 @@ class RobustAIService {
     }
 
     if (!result || result.confidence < 0.3) {
-      console.log('🔍 Usando análisis básico como último recurso');
       result = await this.basicImageAnalysis(imageDataUrl);
     }
 
@@ -165,19 +153,33 @@ class RobustAIService {
     };
   }
 
-  private parseAIResponse(data: any): AIAnalysisResult {
-    let parsed: Partial<AIAnalysisResult> = {};
-    if (data.name && data.category) parsed = data;
-    else if (data.text || data.response) parsed = this.extractFromText(data.text || data.response);
-    else if (typeof data === 'string') {
+  private parseAIResponse(data: Record<string, any>): AIAnalysisResult {
+    let parsed: any = {};
+    
+    // Normalizar respuestas de diferentes proveedores (gemini-analyze vs analyze-item)
+    if (data.name || data.category) {
+      parsed = data;
+    } else if (data.nombre_corto || data.categoria) {
+      parsed = {
+        name: data.nombre_corto,
+        category: data.categoria,
+        description: data.descripcion,
+        tags: data.tags,
+        specifications: data.especificaciones,
+        confidence: data.confidence || 0.8
+      };
+    } else if (data.text || data.response) {
+      parsed = this.extractFromText(String(data.text || data.response));
+    } else if (typeof data === 'string') {
       try { parsed = JSON.parse(data); } catch { parsed = this.extractFromText(data); }
     }
     
     return {
-      name: this.sanitizeString(parsed.name) || 'Objeto detectado',
-      category: this.validateCategory(parsed.category),
-      description: this.sanitizeString(parsed.description) || 'Descripción no disponible',
+      name: this.sanitizeString(parsed.name || parsed.nombre_corto) || 'Objeto detectado',
+      category: this.validateCategory(parsed.category || parsed.categoria),
+      description: this.sanitizeString(parsed.description || parsed.descripcion) || 'Descripción no disponible',
       tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
+      specifications: parsed.specifications || parsed.especificaciones || {},
       confidence: Math.min(1, Math.max(0, parsed.confidence || 0.5)),
       needsReview: false
     };
@@ -212,12 +214,12 @@ class RobustAIService {
     };
   }
 
-  private classifyError(error: any): AIError {
-    const message = error.message?.toLowerCase() || '';
+  private classifyError(error: unknown): AIError {
+    const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
     if (message.includes('network') || message.includes('fetch')) return { type: 'network', message: 'Error de conexión', retryable: true };
     if (message.includes('timeout') || message.includes('abort')) return { type: 'timeout', message: 'Tiempo de espera agotado', retryable: true };
     if (message.includes('rate') || message.includes('quota')) return { type: 'rate_limit', message: 'Límite alcanzado', retryable: false };
-    return { type: 'unknown', message: error.message || 'Error desconocido', retryable: true };
+    return { type: 'unknown', message: message || 'Error desconocido', retryable: true };
   }
 
   private isValidImageFormat(dataUrl: string): boolean {
